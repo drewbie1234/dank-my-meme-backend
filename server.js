@@ -210,7 +210,7 @@ app.get("/api/getEns", async (req, res) => {
     try {
         const ensName = await getEnsName(account);
         console.log(ensName);
-        res.json({ ensName: ensName || "No ENS name found" });
+        res.json({ ensName: ensName || account });
     } catch (error) {
         console.error("Error fetching ENS name:", error);
         res.status(500).send("Error fetching ENS name");
