@@ -2,9 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const mongoose = require("mongoose");
+const https = require("https"); // Import the 'https' module
+const fs = require("fs");
 require("dotenv").config();
-const ethers = require('ethers');
-// const setupEventListeners = require("../backend/utils/listenToContractEvents")
+const ethers = require("ethers");
 
 // Import models
 const Contest = require("./database/models/Contest");
@@ -16,25 +17,22 @@ const uri = process.env.MONGODB_URI;
 
 // Async function to connect to MongoDB
 async function connectToMongoDB() {
-    try {
-        await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-        console.log('Successfully connected to MongoDB');
-    } catch (err) {
-        console.error('MongoDB connection error:', err);
-        process.exit(1); // Exit the process with an error code
-    }
+  try {
+    await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Successfully connected to MongoDB");
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    process.exit(1); // Exit the process with an error code
+  }
 }
 
 // Execute the connection function
 connectToMongoDB();
 
 // Ethereum provider setup
-const url = process.env.ETH_PROVIDER_URL || 'https://turbo.magma-rpc.com';
+const url = process.env.ETH_PROVIDER_URL || "https://turbo.magma-rpc.com";
 const provider = new ethers.JsonRpcProvider(url);
 console.log("Using Ethereum provider at:", url);
-
-// Initialize event listeners
-// setupEventListeners(provider);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,6 +42,14 @@ app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
 
+// Configure SSL/TLS certificates
+const options = {
+  key: fs.readFileSync("path/to/private/key.pem"),
+  cert: fs.readFileSync("path/to/certificate/cert.pem"),
+};
+
+// Create HTTPS server
+const server = https.createServer(options, app);
 
 // Import the Ethereum functionality
 const { getBalance, getEnsName } = require("./utils/ethereum");
