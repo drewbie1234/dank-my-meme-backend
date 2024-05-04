@@ -46,8 +46,8 @@ app.use(fileUpload());
 
 
 // Import the Ethereum functionality
-const { getBalance, getEnsName } = require("../backend/utils/ethereum");
-const { pinFileToIPFS } = require("../backend/utils/pinata");
+const { getBalance, getEnsName } = require("./utils/ethereum");
+const { pinFileToIPFS } = require("./utils/pinata");
 
 app.post("/api/contests", async (req, res) => {
     console.log("Received data for new contest:", req.body);
