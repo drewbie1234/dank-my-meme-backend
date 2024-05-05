@@ -134,18 +134,18 @@ app.get("/api/submissions", async (req, res) => {
 
 
 app.post("/api/vote", async (req, res) => {
-    const { contestId, userAddress, submissionIndex, txHash } = req.body;
+    const { contest, voter, submissionIndex, txHash } = req.body;
 
     // Log the parameters
     console.log("Vote Request Parameters:");
-    console.log(`  Contest ID: ${contestId}`);
-    console.log(`  User Address: ${userAddress}`);
+    console.log(`  Contest ID: ${contest}`);
+    console.log(`  User Address: ${voter}`);
     console.log(`  Submission Index: ${submissionIndex}`);
     console.log(`  Transaction Hash: ${txHash}`);
     
     // Validate input data
-    if (!contestId || !userAddress || submissionIndex === undefined) {
-        console.error("Invalid input data. Missing required fields.");
+    if (!contestId || !userAddress || !submissionIndex === undefined) {
+        console.error("Invalid input data. Missing required fieldczasddsas.");
         return res.status(400).json({ message: "Invalid input data. Missing required fields." });
     }
 
