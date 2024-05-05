@@ -133,68 +133,58 @@ app.get("/api/submissions", async (req, res) => {
 
 
 
+// Server-side vote recording (Node.js/Express)
 app.post("/api/vote", async (req, res) => {
     const { contestId, voter, submissionIndex, txHash } = req.body;
 
-    // Log the parameters
-    console.log("Vote Request Parameters:");
-    console.log(`  Contest ID: ${contestId}`);
-    console.log(`  User Address: ${voter}`);
-    console.log(`  Submission Index: ${submissionIndex}`);
-    console.log(`  Transaction Hash: ${txHash}`);
-    
-    // // Validate input data
-    // if (!contestId || !userAddress || !submissionIndex === undefined) {
-    //     console.error("Invalid input data. Missing required fieldczasddsas.");
+    // // Ensure that required parameters are provided
+    // if (!contestId || !voter || submissionIndex === undefined || !txHash) {
+    //     console.error("Invalid input data. Missing required fields.");
     //     return res.status(400).json({ message: "Invalid input data. Missing required fields." });
     // }
 
-    console.log(`Received vote request for contestId: ${contestId}, userAddress: ${voter}, submissionIndex: ${submissionIndex}, txHash: ${txHash}`);
-
     try {
-        // Find contest by ID
-        const contest = await Contest.findById(contestId);
+        // Find the submission using `submissionIndex`
+        const contest = await Contest.findById(contestId).populate('submissions');
         if (!contest) {
             console.error("Contest not found:", contestId);
             return res.status(404).json({ message: "Contest not found" });
         }
 
-        // Find submission based on the contest ID and submission index
-        const submission = await Submission.findOne({ contest: contestId, index: submissionIndex });
+        const submission = contest.submissions[submissionIndex];
         if (!submission) {
             console.error("Submission not found for index:", submissionIndex);
             return res.status(404).json({ message: "Submission not found" });
         }
 
-        // Create a new vote entry
+        // Record the vote
         const vote = new Vote({
-            contest: contestId,
-            submission: submissionIndex,
-            voter: voter,
-            transactionHash: txHash
+            contest: contest._id,
+            submission: submission._id,
+            voter,
+            txHash
         });
         await vote.save();
-        console.log("Vote recorded for submission:", submissionIndex);
 
-        // Increment submission and contest votes
+        // Increment votes on the submission
         submission.votes += 1;
         await submission.save();
 
-        contest.votes += 1;
-        if (!contest.winningSubmission || submission.votes > contest.winningVotes) {
-            contest.winningSubmission = submissionIndex;
-            contest.winningVotes = submission.votes;
-            console.log("Updated winning submission:", submission._id);
+        // Update the contest's winning submission
+        if (!contest.winningSubmission || submission.votes > contest.highestVotes) {
+            contest.winningSubmission = submission._id;
+            contest.highestVotes = submission.votes;
         }
         await contest.save();
 
-        // Respond with success
+        console.log("Vote recorded successfully:", vote);
         res.status(201).json({ message: "Vote recorded successfully", vote });
     } catch (error) {
         console.error("Error recording vote:", error);
         res.status(500).json({ message: "Error recording vote" });
     }
 });
+
 
 
 app.get("/api/getBalance", async (req, res) => {
