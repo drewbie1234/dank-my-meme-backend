@@ -138,7 +138,7 @@ app.post("/api/vote", async (req, res) => {
 
     // Log the parameters
     console.log("Vote Request Parameters:");
-    console.log(`  Contest ID: ${contest}`);
+    console.log(`  Contest ID: ${contestId}`);
     console.log(`  User Address: ${voter}`);
     console.log(`  Submission Index: ${submissionIndex}`);
     console.log(`  Transaction Hash: ${txHash}`);
