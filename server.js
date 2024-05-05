@@ -149,7 +149,7 @@ app.post("/api/vote", async (req, res) => {
     //     return res.status(400).json({ message: "Invalid input data. Missing required fields." });
     // }
 
-    console.log(`Received vote request for contestId: ${contestId}, userAddress: ${userAddress}, submissionIndex: ${submissionIndex}, txHash: ${txHash}`);
+    console.log(`Received vote request for contestId: ${contestId}, userAddress: ${voter}, submissionIndex: ${submissionIndex}, txHash: ${txHash}`);
 
     try {
         // Find contest by ID
