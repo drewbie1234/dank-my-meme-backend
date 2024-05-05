@@ -168,13 +168,13 @@ app.post("/api/vote", async (req, res) => {
 
         // Create a new vote entry
         const vote = new Vote({
-            contest: contest._id,
-            submission: submission._id,
-            voter: userAddress,
+            contest: contestId,
+            submission: submissionIndex,
+            voter: voter,
             transactionHash: txHash
         });
         await vote.save();
-        console.log("Vote recorded for submission:", submission._id);
+        console.log("Vote recorded for submission:", submissionIndex);
 
         // Increment submission and contest votes
         submission.votes += 1;
@@ -182,7 +182,7 @@ app.post("/api/vote", async (req, res) => {
 
         contest.votes += 1;
         if (!contest.winningSubmission || submission.votes > contest.winningVotes) {
-            contest.winningSubmission = submission._id;
+            contest.winningSubmission = submissionIndex;
             contest.winningVotes = submission.votes;
             console.log("Updated winning submission:", submission._id);
         }
