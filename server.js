@@ -130,57 +130,72 @@ app.get("/api/submissions", async (req, res) => {
     }
 });
 
+
+
+
 app.post("/api/vote", async (req, res) => {
-    const { submissionId, voter } = req.body;
+    const { contestId, userAddress, submissionIndex, txHash } = req.body;
+
+    // Log the parameters
+    console.log("Vote Request Parameters:");
+    console.log(`  Contest ID: ${contestId}`);
+    console.log(`  User Address: ${userAddress}`);
+    console.log(`  Submission Index: ${submissionIndex}`);
+    console.log(`  Transaction Hash: ${txHash}`);
+    
+    // Validate input data
+    if (!contestId || !userAddress || submissionIndex === undefined) {
+        console.error("Invalid input data. Missing required fields.");
+        return res.status(400).json({ message: "Invalid input data. Missing required fields." });
+    }
+
+    console.log(`Received vote request for contestId: ${contestId}, userAddress: ${userAddress}, submissionIndex: ${submissionIndex}, txHash: ${txHash}`);
+
     try {
-        const submission = await Submission.findById(submissionId);
-        if (!submission) {
-            return res.status(404).send("Submission not found");
-        }
-        const contest = await Contest.findById(submission.contest);
+        // Find contest by ID
+        const contest = await Contest.findById(contestId);
         if (!contest) {
-            return res.status(404).send("Contest not found");
+            console.error("Contest not found:", contestId);
+            return res.status(404).json({ message: "Contest not found" });
         }
-        const vote = new Vote({ contest: contest._id, submission: submissionId, voter });
+
+        // Find submission based on the contest ID and submission index
+        const submission = await Submission.findOne({ contest: contestId, index: submissionIndex });
+        if (!submission) {
+            console.error("Submission not found for index:", submissionIndex);
+            return res.status(404).json({ message: "Submission not found" });
+        }
+
+        // Create a new vote entry
+        const vote = new Vote({
+            contest: contest._id,
+            submission: submission._id,
+            voter: userAddress,
+            transactionHash: txHash
+        });
         await vote.save();
-        submission.votes = submission.votes + 1;
+        console.log("Vote recorded for submission:", submission._id);
+
+        // Increment submission and contest votes
+        submission.votes += 1;
         await submission.save();
-        contest.votes = contest.votes + 1;
+
+        contest.votes += 1;
         if (!contest.winningSubmission || submission.votes > contest.winningVotes) {
             contest.winningSubmission = submission._id;
             contest.winningVotes = submission.votes;
+            console.log("Updated winning submission:", submission._id);
         }
         await contest.save();
+
+        // Respond with success
         res.status(201).json({ message: "Vote recorded successfully", vote });
     } catch (error) {
         console.error("Error recording vote:", error);
-        res.status(500).send("Error recording vote");
+        res.status(500).json({ message: "Error recording vote" });
     }
 });
 
-app.post("/api/contests/:id/finalize", async (req, res) => {
-    const { id } = req.params;
-    try {
-        const contest = await Contest.findById(id).populate("submissions");
-        let winningSubmission = null;
-        let maxVotes = 0;
-        contest.submissions.forEach((submission) => {
-            if (submission.votes > maxVotes) {
-                maxVotes = submission.votes;
-                winningSubmission = submission;
-            }
-        });
-        if (winningSubmission) {
-            contest.winningSubmission = winningSubmission._id;
-            contest.winningVotes = maxVotes;
-            await contest.save();
-        }
-        res.json({ contest });
-    } catch (error) {
-        console.error("Error finalizing contest:", error);
-        res.status(500).send("Error finalizing contest");
-    }
-});
 
 app.get("/api/getBalance", async (req, res) => {
     const { account } = req.query;
@@ -210,7 +225,7 @@ app.get("/api/getEns", async (req, res) => {
     try {
         const ensName = await getEnsName(account);
         console.log(ensName);
-        res.json({ ensName: ensName || account });
+        res.json({ ensName: ensName || "No ENS name found" });
     } catch (error) {
         console.error("Error fetching ENS name:", error);
         res.status(500).send("Error fetching ENS name");
