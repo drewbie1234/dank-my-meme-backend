@@ -229,5 +229,5 @@ app.get("/api/getEns", async (req, res) => {
 
 // Start the HTTPS server
 https.createServer(options, app).listen(port, () => {
-    console.log(`Server running at https://localhost:${port}`);
+    console.log(`Server running at https://194.124.43.95:${port}`);
   });
