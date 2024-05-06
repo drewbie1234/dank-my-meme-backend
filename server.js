@@ -10,22 +10,9 @@ const ethers = require('ethers');
 
 // Read SSL certificate and key
 const options = {
-  key: fs.readFileSync('./key.pem'), // Path to the private key file
-  cert: fs.readFileSync('./cert.pem'), // Path to the certificate file
+  key: fs.readFileSync('./certificates/key.pem'), // Path to the private key file
+  cert: fs.readFileSync('./certificates/cert.pem'), // Path to the certificate file
 };
-
-
-
-
-
-
-// Start the HTTPS server
-https.createServer(options, app).listen(port, () => {
-  console.log(`Server running at https://localhost:${port}`);
-});
-
-
-
 
 // Import models and other utilities as before
 const Contest = require("./database/models/Contest");
@@ -58,19 +45,14 @@ console.log("Using Ethereum provider at:", url);
 
 // Initialize the Express application
 const app = express();
-const PORT = process.env.PORT || 443;
+const port = process.env.port || 443;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
 
-// SSL Options: Paths to your certificate files
-const sslOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'certs', 'privkey.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem')),
-    ca: fs.readFileSync(path.join(__dirname, 'certs', 'chain.pem'))
-};
+
 
 app.post("/api/contests", async (req, res) => {
     console.log("Received data for new contest:", req.body);
