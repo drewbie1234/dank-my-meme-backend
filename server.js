@@ -1,15 +1,38 @@
+const https = require("https");
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const ethers = require('ethers');
-// const setupEventListeners = require("../backend/utils/listenToContractEvents")
 
-// Import models
+// Read SSL certificate and key
+const options = {
+  key: fs.readFileSync('./key.pem'), // Path to the private key file
+  cert: fs.readFileSync('./cert.pem'), // Path to the certificate file
+};
+
+
+
+
+
+
+// Start the HTTPS server
+https.createServer(options, app).listen(port, () => {
+  console.log(`Server running at https://localhost:${port}`);
+});
+
+
+
+
+// Import models and other utilities as before
 const Contest = require("./database/models/Contest");
 const Submission = require("./database/models/Submission");
 const Vote = require("./database/models/Vote");
+const { getBalance, getEnsName } = require("./utils/ethereum");
+const { pinFileToIPFS } = require("./utils/pinata");
 
 // MongoDB URI
 const uri = process.env.MONGODB_URI;
@@ -33,21 +56,21 @@ const url = process.env.ETH_PROVIDER_URL || 'https://turbo.magma-rpc.com';
 const provider = new ethers.JsonRpcProvider(url);
 console.log("Using Ethereum provider at:", url);
 
-// Initialize event listeners
-// setupEventListeners(provider);
-
+// Initialize the Express application
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 443;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
 
-
-// Import the Ethereum functionality
-const { getBalance, getEnsName } = require("./utils/ethereum");
-const { pinFileToIPFS } = require("./utils/pinata");
+// SSL Options: Paths to your certificate files
+const sslOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'certs', 'privkey.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem')),
+    ca: fs.readFileSync(path.join(__dirname, 'certs', 'chain.pem'))
+};
 
 app.post("/api/contests", async (req, res) => {
     console.log("Received data for new contest:", req.body);
@@ -222,7 +245,7 @@ app.get("/api/getEns", async (req, res) => {
     }
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// Start the HTTPS server
+https.createServer(options, app).listen(port, () => {
+    console.log(`Server running at https://localhost:${port}`);
+  });
