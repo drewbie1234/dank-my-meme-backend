@@ -52,6 +52,20 @@ app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
 
+// Middleware to log requests
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log("Request headers:", req.headers);
+    console.log("Request body:", req.body);
+    next();
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something middleware broke!');
+});
+
 
 
 app.post("/api/contests", async (req, res) => {
@@ -228,6 +242,17 @@ app.get("/api/getEns", async (req, res) => {
 });
 
 // Start the HTTPS server
-https.createServer(options, app).listen(port, () => {
+const server = https.createServer(options, app);
+
+server.on('request', (req, res) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log("Request headers:", req.headers);
+    console.log("Request body:", req.body);
+    res.on('finish', () => {
+        console.log(`[${new Date().toISOString()}] Response sent with status ${res.statusCode}`);
+    });
+});
+
+server.listen(port, () => {
     console.log(`Server running at https://194.124.43.95:${port}`);
-  });
+});
