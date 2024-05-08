@@ -231,10 +231,16 @@ app.get("/api/getLavaBalance", async (req, res) => {
 
 app.get("/api/getEns", async (req, res) => {
     const { account } = req.query;
+    if (!account) {
+        return res.status(400).send("Account parameter is required");
+    }
+
     try {
         const ensName = await getEnsName(account);
-        console.log(ensName);
-        res.json({ ensName: ensName || "No ENS name found" });
+        // Check if ensName exists, otherwise format the account string
+        const displayName = ensName || `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+        console.log(displayName);
+        res.json({ ensName: displayName });
     } catch (error) {
         console.error("Error fetching ENS name:", error);
         res.status(500).send("Error fetching ENS name");
