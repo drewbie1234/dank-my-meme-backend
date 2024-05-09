@@ -1,18 +1,10 @@
-const https = require("https");
-const fs = require("fs");
-const path = require("path");
 const express = require("express");
 const cors = require("cors");
+const path = require('path');
 const fileUpload = require("express-fileupload");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const ethers = require('ethers');
-
-// Read SSL certificate and key
-const options = {
-  key: fs.readFileSync('./certificates/key.pem'), // Path to the private key file
-  cert: fs.readFileSync('./certificates/cert.pem'), // Path to the certificate file
-};
 
 // Import models and other utilities as before
 const Contest = require("./database/models/Contest");
@@ -27,7 +19,7 @@ const uri = process.env.MONGODB_URI;
 // Async function to connect to MongoDB
 async function connectToMongoDB() {
     try {
-        await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+        await mongoose.connect(uri);
         console.log('Successfully connected to MongoDB');
     } catch (err) {
         console.error('MongoDB connection error:', err);
@@ -45,7 +37,7 @@ console.log("Using Ethereum provider at:", url);
 
 // Initialize the Express application
 const app = express();
-const port = process.env.port || 443;
+const port = process.env.PORT || 3001; // Use port 80 for HTTP
 
 // Middleware
 app.use(cors());
@@ -66,6 +58,24 @@ app.use((err, req, res, next) => {
     res.status(500).send('Something middleware broke!');
 });
 
+// Serve static files from the '.well-known' directory
+app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
+    dotfiles: 'allow' // Important: allows serving of dotfiles such as '.well-known'
+}));
+
+
+// // Serve static files from the public directory
+// app.use(express.static(path.join(__dirname, 'public')));
+
+// // Explicitly handle requests for the ACME challenge
+// app.get('/.well-known/acme-challenge/:filename', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', '.well-known', 'acme-challenge', req.params.filename));
+// });
+
+// // Serve the React app for all other routes
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
 
 
 app.post("/api/contests", async (req, res) => {
@@ -247,18 +257,12 @@ app.get("/api/getEns", async (req, res) => {
     }
 });
 
-// Start the HTTPS server
-const server = https.createServer(options, app);
 
-server.on('request', (req, res) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    console.log("Request headers:", req.headers);
-    console.log("Request body:", req.body);
-    res.on('finish', () => {
-        console.log(`[${new Date().toISOString()}] Response sent with status ${res.statusCode}`);
-    });
+;
+
+app.listen(port, () => {
+    console.log(`Server running on http://194.124.43.95:${port}`);
 });
 
-server.listen(port, () => {
-    console.log(`Server running at https://194.124.43.95:${port}`);
-});
+// Other routes can be defined similarly 194.124.43.95
+
