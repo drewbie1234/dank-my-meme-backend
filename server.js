@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require("fs");
+const https = require("https");
 const cors = require("cors");
 const path = require('path');
 const fileUpload = require("express-fileupload");
@@ -6,12 +8,33 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const ethers = require('ethers');
 
+// Load SSL certificate files
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.dankmymeme.xyz/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/app.dankmymeme.xyz/fullchain.pem', 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/app.dankmymeme.xyz/chain.pem', 'utf8');
+
+const credentials = {
+    key: privateKey,
+    cert: certificate,
+    ca: ca
+  };
+
 // Import models and other utilities as before
 const Contest = require("./database/models/Contest");
 const Submission = require("./database/models/Submission");
 const Vote = require("./database/models/Vote");
 const { getBalance, getEnsName } = require("./utils/ethereum");
 const { pinFileToIPFS } = require("./utils/pinata");
+
+// Initialize the Express application
+const app = express();
+const port = process.env.PORT || 443; // Standard HTTPS port is 443
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(fileUpload());
+
 
 // MongoDB URI
 const uri = process.env.MONGODB_URI;
@@ -35,14 +58,7 @@ const url = process.env.ETH_PROVIDER_URL || 'https://turbo.magma-rpc.com';
 const provider = new ethers.JsonRpcProvider(url);
 console.log("Using Ethereum provider at:", url);
 
-// Initialize the Express application
-const app = express();
-const port = process.env.PORT || 3001; // Use port 80 for HTTP
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(fileUpload());
 
 // Middleware to log requests
 app.use((req, res, next) => {
@@ -62,20 +78,6 @@ app.use((err, req, res, next) => {
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
     dotfiles: 'allow' // Important: allows serving of dotfiles such as '.well-known'
 }));
-
-
-// // Serve static files from the public directory
-// app.use(express.static(path.join(__dirname, 'public')));
-
-// // Explicitly handle requests for the ACME challenge
-// app.get('/.well-known/acme-challenge/:filename', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', '.well-known', 'acme-challenge', req.params.filename));
-// });
-
-// // Serve the React app for all other routes
-// app.get('*', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
-// });
 
 
 app.post("/api/contests", async (req, res) => {
@@ -257,12 +259,14 @@ app.get("/api/getEns", async (req, res) => {
     }
 });
 
+// Create the HTTPS server and pass in your app (Express instance)
+const httpsServer = https.createServer(credentials, app);
 
-;
-
-app.listen(port, () => {
-    console.log(`Server running on http://194.124.43.95:${port}`);
+// Listen on HTTPS
+httpsServer.listen(port, () => {
+    console.log(`HTTPS Server running on https://194.124.43.95:${port}`);
 });
+
 
 // Other routes can be defined similarly 194.124.43.95
 
