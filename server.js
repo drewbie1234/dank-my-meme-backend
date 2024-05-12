@@ -122,6 +122,38 @@ app.patch("/api/contests/:contestId/end", async (req, res) => {
     }
 });
 
+// PATCH request to update contest owner
+app.patch('/api/contests/:contestId/owner', async (req, res) => {
+    const { contestId } = req.params;
+    const { newOwner } = req.body;
+
+    if (!newOwner) {
+        return res.status(400).send('New owner address is required');
+    }
+
+    try {
+        const updatedContest = await Contest.findByIdAndUpdate(
+            contestId,
+            { $set: { contestOwner: newOwner }},
+            { new: true } // options to return the updated document
+        );
+
+        if (!updatedContest) {
+            return res.status(404).send('Contest not found');
+        }
+
+        console.log('Updated contest owner:', updatedContest);
+        res.json({
+            message: 'Contest owner updated successfully',
+            contest: updatedContest
+        });
+    } catch (error) {
+        console.error('Failed to update contest owner:', error);
+        res.status(500).send('Error updating contest owner');
+    }
+});
+
+
 
 app.get("/api/contests", async (req, res) => {
     try {
