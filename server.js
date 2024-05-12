@@ -89,7 +89,7 @@ app.post("/api/contests", async (req, res) => {
         }
         const newContest = new Contest({
             name, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime),
-            entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner
+            entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX
         });
         await newContest.save();
         console.log("Contest created:", newContest);
