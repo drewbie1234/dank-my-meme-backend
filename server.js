@@ -100,6 +100,29 @@ app.post("/api/contests", async (req, res) => {
     }
 });
 
+app.patch("/api/contests/:contestId/end", async (req, res) => {
+    const { contestId } = req.params;
+    try {
+        // Find the contest by ID and update the contestEnded field to true
+        const updatedContest = await Contest.findByIdAndUpdate(
+            contestId,
+            { $set: { contestEnded: true } },
+            { new: true }  // Return the updated document
+        );
+
+        if (!updatedContest) {
+            return res.status(404).send("Contest not found");
+        }
+
+        console.log("Contest ended successfully:", updatedContest);
+        res.json({ message: "Contest ended successfully", contest: updatedContest });
+    } catch (error) {
+        console.error("Error ending contest:", error);
+        res.status(500).send("Error ending contest");
+    }
+});
+
+
 app.get("/api/contests", async (req, res) => {
     try {
         const contests = await Contest.find({});
