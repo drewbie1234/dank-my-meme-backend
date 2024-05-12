@@ -35,6 +35,7 @@ app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
 
+app.set('view engine', 'ejs');  // Set the template engine to EJS
 
 // MongoDB URI
 const uri = process.env.MONGODB_URI;
@@ -80,25 +81,45 @@ app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
 }));
 
 
-app.post("/api/contests", async (req, res) => {
-    console.log("Received data for new contest:", req.body);
-    try {
-        const { name, startDateTime, endDateTime, entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX } = req.body;
-        if (!name || !startDateTime || !endDateTime || !entryFee || !votingFee || !winnerPercentage || !numberOfLuckyVoters || !contractAddress || !tokenAddress || !contestOwner) {
-            throw new Error("Missing required fields");
+app.get('/share/:submissionId', async (req, res) => {
+    const { submissionId } = req.params;
+    const userAgent = req.headers['user-agent'].toLowerCase();
+
+    function isBot(userAgent) {
+        const bots = ["facebookexternalhit", "twitterbot", "whatsapp"];
+        return bots.some(bot => userAgent.includes(bot));
+    }
+
+    if (isBot(userAgent)) {
+        const submission = await Submission.findById(submissionId);
+        if (!submission) {
+            return res.status(404).send('Submission not found');
         }
-        const newContest = new Contest({
-            name, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime),
-            entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX
-        });
-        await newContest.save();
-        console.log("Contest created:", newContest);
-        res.json(newContest);
-    } catch (error) {
-        console.error("Error creating contest:", error);
-        res.status(500).send("Error creating contest");
+        // Send an HTML response with Open Graph tags
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>${submission.title}</title>
+                <meta property="og:title" content="${submission.title}" />
+                <meta property="og:description" content="${submission.description}" />
+                <meta property="og:image" content="${submission.imageUrl}" />
+                <meta property="og:url" content="${req.protocol}://${req.get('host')}/share/${submissionId}" />
+                <meta property="og:type" content="website" />
+            </head>
+            <body>
+                <h1>${submission.title}</h1>
+                <img src="${submission.imageUrl}" alt="${submission.title}">
+                <p>${submission.description}</p>
+            </body>
+            </html>
+        `);
+    } else {
+        // Redirect to the SPA's client-side route
+        res.redirect(`/submission/${submissionId}`);
     }
 });
+
 
 app.patch("/api/contests/:contestId/end", async (req, res) => {
     const { contestId } = req.params;
