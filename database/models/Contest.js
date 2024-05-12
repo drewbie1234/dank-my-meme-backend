@@ -15,7 +15,8 @@ const contestSchema = new mongoose.Schema({
     tokenAddress: String, // Address of the token used for fees and rewards
     winningSubmission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
     contestOwner: { type: String, required: true }, // Address of the contest owner
-    contestEnded: { type: Boolean, default: false } // Flag to indicate if the contest has ended
+    contestEnded: { type: Boolean, default: false }, // Flag to indicate if the contest has ended
+    distributionTX: { type: String, default: ''},
 });
 
 const Contest = mongoose.model('Contest', contestSchema);
