@@ -81,44 +81,21 @@ app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
 }));
 
 
-app.get('/share/:submissionId', async (req, res) => {
+app.get('/api/submission/:submissionId', async (req, res) => {
     const { submissionId } = req.params;
-    const userAgent = req.headers['user-agent'].toLowerCase();
-
-    function isBot(userAgent) {
-        const bots = ["facebookexternalhit", "twitterbot", "whatsapp"];
-        return bots.some(bot => userAgent.includes(bot));
-    }
-
-    if (isBot(userAgent)) {
+    try {
         const submission = await Submission.findById(submissionId);
         if (!submission) {
-            return res.status(404).send('Submission not found');
+            res.status(404).json({ message: 'Submission not found' });
+            return;
         }
-        // Send an HTML response with Open Graph tags
-        res.send(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>${submission.title}</title>
-                <meta property="og:title" content="${submission.title}" />
-                <meta property="og:description" content="${submission.description}" />
-                <meta property="og:image" content="${submission.imageUrl}" />
-                <meta property="og:url" content="${req.protocol}://${req.get('host')}/share/${submissionId}" />
-                <meta property="og:type" content="website" />
-            </head>
-            <body>
-                <h1>${submission.title}</h1>
-                <img src="${submission.imageUrl}" alt="${submission.title}">
-                <p>${submission.description}</p>
-            </body>
-            </html>
-        `);
-    } else {
-        // Redirect to the SPA's client-side route
-        res.redirect(`/submission/${submissionId}`);
+        res.json(submission);
+    } catch (error) {
+        console.error('Server error fetching submission:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
+
 
 
 app.patch("/api/contests/:contestId/end", async (req, res) => {
