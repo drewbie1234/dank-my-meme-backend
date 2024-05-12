@@ -7,6 +7,7 @@ const fileUpload = require("express-fileupload");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const ethers = require('ethers');
+const helmet = require('helmet'); // Import Helmet
 
 // Load SSL certificate files
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.dankmymeme.xyz/privkey.pem', 'utf8');
@@ -80,6 +81,30 @@ app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
     dotfiles: 'allow' // Important: allows serving of dotfiles such as '.well-known'
 }));
 
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Basic Helmet usage
+app.use(helmet({
+    contentSecurityPolicy: false, // Disable CSP; customize as per your needs
+  }));
+  
+  // Custom Helmet settings for social media meta tags
+  app.use((req, res, next) => {
+    res.locals.helmet = helmet({
+      meta: {
+        'og:image': `https://app.dankmymeme.xyz/public/images/dank_my_meme.PNG`,
+        'twitter:image': `https://app.dankmymeme.xyz/public/images/dank_my_meme.PNG`,
+        'og:image:type': 'image/PNG',
+        'og:image:width': '1200',
+        'og:image:height': '630',
+        'og:url': `https://app.dankmymeme.xyz${req.originalUrl}`,
+        'og:title': 'Dank My Meme - Explore the best memes!',
+        'og:description': 'Join and explore the most entertaining memes on the internet. Participate in contests and win prizes!',
+        'og:type': 'website'
+      }
+    });
+    next();
+  });
 
 
 app.get('/api/submission/:submissionId', async (req, res) => {
