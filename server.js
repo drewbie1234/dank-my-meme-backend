@@ -81,18 +81,35 @@ app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
 }));
 
 
-app.get('/api/submission/:submissionId', async (req, res) => {
-    const { submissionId } = req.params;
+
+router.get('/api/submission/:submissionId', async (req, res) => {
     try {
-        const submission = await Submission.findById(submissionId);
+        // Find the submission by ID and populate the contest data
+        const submission = await Submission.findById(req.params.submissionId).populate('contest');
         if (!submission) {
-            res.status(404).json({ message: 'Submission not found' });
-            return;
+            return res.status(404).send('Submission not found');
         }
-        res.json(submission);
+
+        // Optionally, you can further filter to only return the requested submission in the contest's submissions array
+        const contest = await Contest.findById(submission.contest._id)
+            .populate({
+                path: 'submissions',
+                match: { _id: req.params.submissionId }  // This filters to only include the specific submission
+            });
+
+        if (!contest) {
+            return res.status(404).send('Contest not found');
+        }
+
+        res.json({
+            contest: {
+                ...contest.toObject(),
+                submissions: contest.submissions // This should now only contain the requested submission
+            }
+        });
     } catch (error) {
-        console.error('Server error fetching submission:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Failed to fetch submission and contest:', error);
+        res.status(500).send('Server error');
     }
 });
 
