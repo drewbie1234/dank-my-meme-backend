@@ -103,8 +103,9 @@ app.get('/api/submission/:submissionId', async (req, res) => {
 
         res.json({
             contest: {
+                console.log()
                 ...contest.toObject(),
-                submissions: contest.submissions[submission._id] // This should now only contain the requested submission
+                submissions: contest.submissions[submissionId] // This should now only contain the requested submission
             }
         });
     } catch (error) {
