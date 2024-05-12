@@ -216,25 +216,25 @@ app.get("/api/submissions", async (req, res) => {
     }
 });
 
-
-
-
-// Server-side vote recording (Node.js/Express)
 app.post("/api/vote", async (req, res) => {
     const { contestId, voter, submissionIndex, txHash } = req.body;
 
-    // // Ensure that required parameters are provided
-    // if (!contestId || !voter || submissionIndex === undefined || !txHash) {
-    //     console.error("Invalid input data. Missing required fields.");
-    //     return res.status(400).json({ message: "Invalid input data. Missing required fields." });
-    // }
+    if (!contestId || !voter || submissionIndex === undefined || !txHash) {
+        console.error("Invalid input data. Missing required fields.");
+        return res.status(400).json({ message: "Invalid input data. Missing required fields." });
+    }
 
     try {
-        // Find the submission using `submissionIndex`
+        // Find the contest by ID
         const contest = await Contest.findById(contestId).populate('submissions');
         if (!contest) {
             console.error("Contest not found:", contestId);
             return res.status(404).json({ message: "Contest not found" });
+        }
+
+        // Check if the voter has already voted, prevent duplicate votes if necessary
+        if (contest.voters.includes(voter)) {
+            return res.status(400).json({ message: "Voter has already voted." });
         }
 
         const submission = contest.submissions[submissionIndex];
@@ -252,11 +252,14 @@ app.post("/api/vote", async (req, res) => {
         });
         await vote.save();
 
-        // Increment votes on the submission
+        // Increment votes on the submission and add voter to voters list
         submission.votes += 1;
         await submission.save();
 
-        // Update the contest's winning submission
+        // Push the voter to the voters array in the contest document
+        contest.voters.push(voter);
+
+        // Update the contest's winning submission and highest votes
         if (!contest.winningSubmission || submission.votes > contest.highestVotes) {
             contest.winningSubmission = submission._id;
             contest.highestVotes = submission.votes;
@@ -270,6 +273,7 @@ app.post("/api/vote", async (req, res) => {
         res.status(500).json({ message: "Error recording vote" });
     }
 });
+
 
 
 
