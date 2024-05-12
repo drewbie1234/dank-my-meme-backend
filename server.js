@@ -100,10 +100,12 @@ app.get('/api/submission/:submissionId', async (req, res) => {
         if (!contest) {
             return res.status(404).send('Contest not found');
         }
+        
+        console.log(`submission: ${submissionId}`);
 
         res.json({
             contest: {
-                console.log()
+                
                 ...contest.toObject(),
                 submissions: contest.submissions[submissionId] // This should now only contain the requested submission
             }
