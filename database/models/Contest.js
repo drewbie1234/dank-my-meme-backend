@@ -14,7 +14,7 @@ const contestSchema = new mongoose.Schema({
     contractAddress: String, // Smart contract address for the contest
     tokenAddress: String, // Address of the token used for fees and rewards
     winningSubmission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
-    contestOwner: { type: String, required: true }, // Address of the contest owner
+    contestOwner: { type: String }, // Address of the contest owner
     contestEnded: { type: Boolean, default: false }, // Flag to indicate if the contest has ended
     distributionTX: { type: String, default: ''},
 });
