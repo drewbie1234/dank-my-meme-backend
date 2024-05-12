@@ -83,13 +83,13 @@ app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
 app.post("/api/contests", async (req, res) => {
     console.log("Received data for new contest:", req.body);
     try {
-        const { name, startDateTime, endDateTime, entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress } = req.body;
-        if (!name || !startDateTime || !endDateTime || !entryFee || !votingFee || !winnerPercentage || !numberOfLuckyVoters || !contractAddress || !tokenAddress ) {
+        const { name, startDateTime, endDateTime, entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner } = req.body;
+        if (!name || !startDateTime || !endDateTime || !entryFee || !votingFee || !winnerPercentage || !numberOfLuckyVoters || !contractAddress || !tokenAddress || !contestOwner) {
             throw new Error("Missing required fields");
         }
         const newContest = new Contest({
             name, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime),
-            entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress
+            entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner
         });
         await newContest.save();
         console.log("Contest created:", newContest);
