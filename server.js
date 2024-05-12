@@ -82,7 +82,7 @@ app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
 
 
 
-app.get('/api/submission/:submissionId', async (req, res) => {
+router.get('/api/submission/:submissionId', async (req, res) => {
     try {
         // Find the submission by ID and populate the contest data
         const submission = await Submission.findById(req.params.submissionId).populate('contest');
@@ -104,7 +104,7 @@ app.get('/api/submission/:submissionId', async (req, res) => {
         res.json({
             contest: {
                 ...contest.toObject(),
-                submissions: contest.submissions[submission] // This should now only contain the requested submission
+                submissions: contest.submissions // This should now only contain the requested submission
             }
         });
     } catch (error) {
