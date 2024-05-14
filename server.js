@@ -193,6 +193,26 @@ app.patch('/api/contests/:contestId/owner', async (req, res) => {
     }
 });
 
+app.post("/api/contests", async (req, res) => {
+    console.log("Received data for new contest:", req.body);
+    try {
+        const { name, startDateTime, endDateTime, entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX } = req.body;
+        if (!name || !startDateTime || !endDateTime || !entryFee || !votingFee || !winnerPercentage || !numberOfLuckyVoters || !contractAddress || !tokenAddress || !contestOwner) {
+            throw new Error("Missing required fields");
+        }
+        const newContest = new Contest({
+            name, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime),
+            entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX
+        });
+        await newContest.save();
+        console.log("Contest created:", newContest);
+        res.json(newContest);
+    } catch (error) {
+        console.error("Error creating contest:", error);
+        res.status(500).send("Error creating contest");
+    }
+});
+
 
 
 app.get("/api/contests", async (req, res) => {
@@ -252,7 +272,7 @@ app.get("/api/submissions", async (req, res) => {
         res.json(submissions);
     } catch (error) {
         console.error("Error fetching submissions:", error);
-        res.status(500).send("Error fetching submissions");
+        res.status(500).send("Error fetc6hing submissions");
     }
 });
 
