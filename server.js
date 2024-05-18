@@ -41,6 +41,16 @@ app.use(helmet({
 
 app.set('view engine', 'ejs'); // Set the template engine to EJS
 
+// Set up Winston logger
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    transports: [
+        new winston.transports.File({ filename: 'error.log', level: 'error' }),
+        new winston.transports.Console({ format: winston.format.simple() })
+    ]
+});
+
 // MongoDB URI
 const uri = process.env.MONGODB_URI;
 
@@ -73,8 +83,8 @@ app.use((req, res, next) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+    logger.error(err.stack);
+    res.status(500).json({ message: 'Server error' });
 });
 
 // Serve static files from the '.well-known' directory
@@ -102,6 +112,7 @@ app.use((req, res, next) => {
     next();
 });
 
+
 // Route to get contest by submission ID
 app.get('/api/contestbysubmission/:submissionId', async (req, res) => {
     try {
@@ -109,13 +120,13 @@ app.get('/api/contestbysubmission/:submissionId', async (req, res) => {
 
         // Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(submissionId)) {
-            return res.status(400).send('Invalid submission ID');
+            return res.status(400).json({ message: 'Invalid submission ID' });
         }
 
         // Find the submission by ID and populate the contest data
         const submission = await Submission.findById(submissionId).populate('contest');
         if (!submission) {
-            return res.status(404).send('Submission not found');
+            return res.status(404).json({ message: 'Submission not found' });
         }
 
         // Find the contest and filter the submissions array to only include the specific submission ID
@@ -126,7 +137,7 @@ app.get('/api/contestbysubmission/:submissionId', async (req, res) => {
             });
 
         if (!contest) {
-            return res.status(404).send('Contest not found');
+            return res.status(404).json({ message: 'Contest not found' });
         }
 
         res.json({
@@ -137,8 +148,8 @@ app.get('/api/contestbysubmission/:submissionId', async (req, res) => {
             submission: submission
         });
     } catch (error) {
-        console.error('Failed to fetch submission and contest:', error);
-        res.status(500).send('Server error');
+        logger.error('Failed to fetch submission and contest:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
