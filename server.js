@@ -134,20 +134,31 @@ app.get('/api/submission/:submissionId', async (req, res) => {
         }
         console.log("Found submission:", submission);
 
-        const contest = submission.contest;
+        // Find the contest and filter the submissions array to only include the specific submission ID
+        const contest = await Contest.findById(submission.contest._id)
+            .populate({
+                path: 'submissions',
+                match: { _id: submissionId }  // This filters to only include the specific submission
+            });
+
         if (!contest) {
-            console.log("Contest not found for submission ID:", submissionId);
+            console.log("Contest not found for ID:", submission.contest._id);
             return res.status(404).json({ message: 'Contest not found' });
         }
         console.log("Found contest:", contest);
 
-        res.json(contest);
+        res.json({
+            contest: {
+                ...contest.toObject(),
+                submissions: contest.submissions // This should now only contain the requested submission
+            },
+            submission: submission
+        });
     } catch (error) {
-        console.error('Failed to fetch contest for submission:', error);
+        console.error('Failed to fetch submission and contest:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
-
 
 
 // Route to end a contest
