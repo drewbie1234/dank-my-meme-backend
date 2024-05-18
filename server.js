@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const ethers = require("ethers");
 const helmet = require("helmet"); // Import Helmet
+const winston = require("winston");
 
 // Load SSL certificate files
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.dankmymeme.xyz/privkey.pem', 'utf8');
