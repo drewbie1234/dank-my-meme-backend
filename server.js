@@ -144,12 +144,12 @@ app.get('/api/submission/:submissionId', async (req, res) => {
         console.log("Found contest:", contest);
 
         // Filter the submissions array to only include the specific submission
-        const filteredSubmissions = contest.submissions.filter(sub => sub._id.equals(submissionId));
-        console.log("Filtered submissions:", filteredSubmissions);
+        const filteredSubmission = contest.submissions.filter(sub => sub._id.equals(submissionId));
+        console.log("Filtered submissions:", filteredSubmission);
 
         const response = {
             ...contest.toObject(),
-            submissions: filteredSubmissions // Only include the specific submission
+            submissions: [filteredSubmission._id] // Only include the specific submission
         };
 
         res.json(response);
