@@ -134,12 +134,8 @@ app.get('/api/submission/:submissionId', async (req, res) => {
         }
         console.log("Found submission:", submission);
 
-        // Find the contest and filter the submissions array to only include the specific submission ID
         const contest = await Contest.findById(submission.contest._id)
-            .populate({
-                path: 'submissions',
-                match: { _id: submissionId }  // This filters to only include the specific submission
-            });
+            .populate('submissions');
 
         if (!contest) {
             console.log("Contest not found for ID:", submission.contest._id);
@@ -147,9 +143,16 @@ app.get('/api/submission/:submissionId', async (req, res) => {
         }
         console.log("Found contest:", contest);
 
-        res.json({
-            contest
-        });
+        // Filter the submissions array to only include the specific submission
+        const filteredSubmissions = contest.submissions.filter(sub => sub._id.equals(submissionId));
+        console.log("Filtered submissions:", filteredSubmissions);
+
+        const response = {
+            ...contest.toObject(),
+            submissions: filteredSubmissions // Only include the specific submission
+        };
+
+        res.json(response);
     } catch (error) {
         console.error('Failed to fetch submission and contest:', error);
         res.status(500).json({ message: 'Server error' });
