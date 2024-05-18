@@ -148,11 +148,7 @@ app.get('/api/submission/:submissionId', async (req, res) => {
         console.log("Found contest:", contest);
 
         res.json({
-            contest: {
-                ...contest.toObject(),
-                submissions: contest.submissions // This should now only contain the requested submission
-            },
-            submission: submission
+            contest
         });
     } catch (error) {
         console.error('Failed to fetch submission and contest:', error);
