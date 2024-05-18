@@ -115,20 +115,24 @@ app.use((req, res, next) => {
 
 
 // Route to get contest by submission ID
-app.get('/api/contestbysubmission/:submissionId', async (req, res) => {
+app.get('/api/submission/:submissionId', async (req, res) => {
     try {
-        const submissionId = req.params.submissionId;
+        const { submissionId } = req.params;
+        console.log("Received request for submissionId:", submissionId);
 
         // Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(submissionId)) {
+            console.log("Invalid submission ID:", submissionId);
             return res.status(400).json({ message: 'Invalid submission ID' });
         }
 
         // Find the submission by ID and populate the contest data
         const submission = await Submission.findById(submissionId).populate('contest');
         if (!submission) {
+            console.log("Submission not found for ID:", submissionId);
             return res.status(404).json({ message: 'Submission not found' });
         }
+        console.log("Found submission:", submission);
 
         // Find the contest and filter the submissions array to only include the specific submission ID
         const contest = await Contest.findById(submission.contest._id)
@@ -138,8 +142,10 @@ app.get('/api/contestbysubmission/:submissionId', async (req, res) => {
             });
 
         if (!contest) {
+            console.log("Contest not found for ID:", submission.contest._id);
             return res.status(404).json({ message: 'Contest not found' });
         }
+        console.log("Found contest:", contest);
 
         res.json({
             contest: {
@@ -149,10 +155,11 @@ app.get('/api/contestbysubmission/:submissionId', async (req, res) => {
             submission: submission
         });
     } catch (error) {
-        logger.error('Failed to fetch submission and contest:', error);
+        console.error('Failed to fetch submission and contest:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 
 // Route to end a contest
 app.patch("/api/contests/:contestId/end", async (req, res) => {
