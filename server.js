@@ -74,7 +74,7 @@ console.log("Using Ethereum provider at:", url);
 // Middleware to log requests
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    console.log("Request headers:", req.headers);
+    console.log("Request headers:", JSON.stringify(req.headers, null, 2));
     console.log("Request body:", JSON.stringify(req.body, null, 2));  // Log the request body
     next();
 });
