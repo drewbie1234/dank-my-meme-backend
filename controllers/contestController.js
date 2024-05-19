@@ -100,13 +100,25 @@ const getContestsByWallet = async (req, res) => {
 const getContestsByVote = async (req, res) => {
     const { walletAddress } = req.body; // Correctly getting walletAddress from req.body
     try {
+        // Find all votes by the given wallet address
         const votes = await Vote.find({ voter: walletAddress }).populate('contest submission');
+
+        // Extract unique contest IDs from the votes
         const contestIds = [...new Set(votes.map(vote => vote.contest._id))];
+
+        // Find contests by the extracted contest IDs and populate the submissions
         const contests = await Contest.find({ _id: { $in: contestIds } }).populate('submissions');
+
+        // Filter the submissions to include only the ones voted on by the user
         const contestsWithFilteredSubmissions = contests.map(contest => {
-            const filteredSubmissions = contest.submissions.filter(submission => votes.some(vote => vote.submission._id.equals(submission._id)));
+            const filteredSubmissions = contest.submissions
+                .filter(submission => votes.some(vote => vote.submission._id.equals(submission._id)))
+                .map(submission => submission._id); // Map to only submission IDs
+
             return { ...contest.toObject(), submissions: filteredSubmissions };
         });
+
+        // Return the contests with filtered submission IDs
         res.json(contestsWithFilteredSubmissions);
     } catch (error) {
         console.error("Error fetching contests by vote:", error);
