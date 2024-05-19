@@ -1,5 +1,6 @@
 const Submission = require('../models/Submission');
 const Contest = require('../models/Contest');
+const mongoose = require('mongoose');
 
 const createSubmission = async (req, res) => {
     const { contest, userAddress, ipfsHash } = req.body;

@@ -1,6 +1,7 @@
 const Vote = require('../models/Vote');
 const Contest = require('../models/Contest');
 const Submission = require('../models/Submission');
+const mongoose = require('mongoose');
 
 const recordVote = async (req, res) => {
     const { contestId, voter, submissionIndex, txHash } = req.body;
