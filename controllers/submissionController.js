@@ -57,6 +57,7 @@ const getSubmissionById = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
 const getContestBySubmissionId = async (req, res) => {
     const { submissionId } = req.params;
     try {
