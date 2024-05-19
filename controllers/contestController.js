@@ -136,6 +136,25 @@ const getContestsByVote = async (req, res) => {
     }
 };
 
+const getContestBySubmissionId = async (req, res) => {
+    const { submissionId } = req.params;
+    try {
+        const submission = await Submission.findById(submissionId).populate('contest');
+        if (!submission) {
+            return res.status(404).send('Submission not found');
+        }
+        const contest = await Contest.findById(submission.contest._id).populate('submissions');
+        if (!contest) {
+            return res.status(404).send('Contest not found');
+        }
+        const response = { ...contest.toObject(), submissions: [submissionId] };
+        res.json(response);
+    } catch (error) {
+        console.error('Failed to fetch contest by submission:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
     getContests,
     getContestById,
@@ -143,5 +162,6 @@ module.exports = {
     endContest,
     updateContestOwner,
     getContestsByWallet,
-    getContestsByVote
+    getContestsByVote,
+    getContestBySubmissionId
 };
