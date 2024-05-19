@@ -251,7 +251,7 @@ app.get("/api/contests/submissionsByWallet/:walletAddress", async (req, res) => 
             const filteredSubmissions = contest.submissions.filter(submission => submission.wallet === walletAddress);
             return {
                 ...contest.toObject(),
-                submissions: submission._id
+                submissions: filteredSubmissions
             };
         });
         res.json(filteredContests);
