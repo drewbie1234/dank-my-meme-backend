@@ -85,17 +85,31 @@ const updateContestOwner = async (req, res) => {
 const getContestsByWallet = async (req, res) => {
     const { walletAddress } = req.params;
     try {
+        // Find all contests and populate the submissions
         const contests = await Contest.find({}).populate('submissions');
+
+        // Filter the submissions within each contest to include only those from the specified wallet address
         const filteredContests = contests.map(contest => {
-            const filteredSubmissions = contest.submissions.filter(submission => submission.wallet === walletAddress).map(submission => submission._id);
+            const filteredSubmissions = contest.submissions
+                .filter(submission => submission.wallet === walletAddress)
+                .map(submission => submission._id); // Map to only submission IDs
+
             return { ...contest.toObject(), submissions: filteredSubmissions };
-        }).filter(contest => contest.submissions.length > 0);
+        }).filter(contest => contest.submissions.length > 0); // Ensure only contests with matching submissions are returned
+
+        // Return the contests with filtered submission IDs
         res.json(filteredContests);
     } catch (error) {
         console.error("Error fetching contests with filtered submissions:", error);
         res.status(500).send("Error fetching contests with filtered submissions");
     }
 };
+
+module.exports = {
+    getContestsByWallet,
+    // other exports
+};
+
 
 const getContestsByVote = async (req, res) => {
     const { walletAddress } = req.body; // Correctly getting walletAddress from req.body
