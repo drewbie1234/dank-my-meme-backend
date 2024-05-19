@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const VoteSchema = new Schema({
     contest: {
         type: Schema.Types.ObjectId,
-        ref: 'Competition', // Adjusted to the correct contest model name if different
+        ref: 'Contest', // Adjusted to the correct contest model name if different
         required: true
     },
     submission: {
