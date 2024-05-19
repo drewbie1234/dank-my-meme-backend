@@ -83,7 +83,7 @@ const updateContestOwner = async (req, res) => {
 };
 
 const getContestsByWallet = async (req, res) => {
-    const { walletAddress } = req.params;
+    const { walletAddress } = req.body; // Changed to read from req.body
     try {
         // Find all contests and populate the submissions
         const contests = await Contest.find({}).populate('submissions');
@@ -105,10 +105,6 @@ const getContestsByWallet = async (req, res) => {
     }
 };
 
-module.exports = {
-    getContestsByWallet,
-    // other exports
-};
 
 
 const getContestsByVote = async (req, res) => {

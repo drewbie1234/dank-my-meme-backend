@@ -15,7 +15,7 @@ router.get('/:contestId', getContestById);
 router.post('/', createContest);
 router.patch('/:contestId/end', endContest);
 router.patch('/:contestId/owner', updateContestOwner);
-router.get('/submissionsByWallet/:walletAddress', getContestsByWallet);
+router.post('/submissionsByWallet/:walletAddress', getContestsByWallet);
 router.post('/votedContests', getContestsByVote); // Ensure this route is defined
 
 module.exports = router;
