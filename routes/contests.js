@@ -1,26 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const {
+    getContests,
+    getContestById,
     createContest,
-    getAllContests,
-    getContestBySubmission,
+    endContest,
+    updateContestOwner,
     getContestsByWallet,
     getContestsByVote
 } = require('../controllers/contestController');
 
-// Route to create a new contest
+// Define the routes
+router.get('/', getContests);
+router.get('/:contestId', getContestById);
 router.post('/', createContest);
-
-// Route to get all contests
-router.get('/', getAllContests);
-
-// Route to get contest by submission ID
-router.get('/submission/:submissionId', getContestBySubmission);
-
-// Route to get all contests with submissions filtered by wallet address
+router.patch('/:contestId/end', endContest);
+router.patch('/:contestId/owner', updateContestOwner);
 router.get('/submissionsByWallet/:walletAddress', getContestsByWallet);
-
-// Route to get contests by vote
-router.post('/votedContests', getContestsByVote); // Changed to POST
+router.get('/votedContests/:walletAddress', getContestsByVote);
 
 module.exports = router;
