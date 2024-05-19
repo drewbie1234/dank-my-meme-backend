@@ -1,5 +1,5 @@
 const Contest = require('../models/Contest');
-const Vote = require('../models/Vote');
+const Vote = require('../');
 
 const getContests = async (req, res) => {
     try {
