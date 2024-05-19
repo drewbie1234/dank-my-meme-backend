@@ -98,7 +98,7 @@ const getContestsByWallet = async (req, res) => {
 };
 
 const getContestsByVote = async (req, res) => {
-    const { walletAddress } = req.params;
+    const { walletAddress } = req.body; // Changed to req.body to match the frontend request
     try {
         const votes = await Vote.find({ voter: walletAddress }).populate('contest submission');
         const contestIds = [...new Set(votes.map(vote => vote.contest._id))];
