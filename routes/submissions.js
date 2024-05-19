@@ -11,6 +11,6 @@ const {
 router.post('/', createSubmission);
 router.get('/', getSubmissionsByIds);
 router.get('/:submissionId', getSubmissionById);
-router.get('/:submissionId/contest', getContestBySubmissionId);
+router.get('submissions/:submissionId', getContestBySubmissionId);
 
 module.exports = router;
