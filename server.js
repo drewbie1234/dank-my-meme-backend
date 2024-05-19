@@ -242,6 +242,26 @@ app.post("/api/contests", async (req, res) => {
     }
 });
 
+// Route to get all contests with submissions filtered by wallet address
+app.get("/api/contests/submissionsByWallet/:walletAddress", async (req, res) => {
+    const { walletAddress } = req.params;
+    try {
+        const contests = await Contest.find({}).populate('submissions');
+        const filteredContests = contests.map(contest => {
+            const filteredSubmissions = contest.submissions.filter(submission => submission.wallet === walletAddress);
+            return {
+                ...contest.toObject(),
+                submissions: filteredSubmissions
+            };
+        });
+        res.json(filteredContests);
+    } catch (error) {
+        console.error("Error fetching contests with filtered submissions:", error);
+        res.status(500).send("Error fetching contests with filtered submissions");
+    }
+});
+
+
 // Route to get all contests
 app.get("/api/contests", async (req, res) => {
     try {
