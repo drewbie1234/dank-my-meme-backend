@@ -246,14 +246,22 @@ app.post("/api/contests", async (req, res) => {
 app.get("/api/contests/submissionsByWallet/:walletAddress", async (req, res) => {
     const { walletAddress } = req.params;
     try {
-        const contests = await Contest.find({}).populate('submissions');
+        // Find all contests and populate the submissions
+        const contests = await Contest.find({})
+            .populate('submissions');
+
+        // Filter the submissions based on wallet address
         const filteredContests = contests.map(contest => {
-            const filteredSubmissions = contest.submissions.filter(submission => submission.wallet === walletAddress);
+            const filteredSubmissions = contest.submissions
+                .filter(submission => submission.wallet === walletAddress)
+                .map(submission => submission._id); // Only keep the submission IDs
+
             return {
                 ...contest.toObject(),
                 submissions: filteredSubmissions
             };
-        });
+        }).filter(contest => contest.submissions.length > 0); // Ensure we only return contests with matching submissions
+
         res.json(filteredContests);
     } catch (error) {
         console.error("Error fetching contests with filtered submissions:", error);
