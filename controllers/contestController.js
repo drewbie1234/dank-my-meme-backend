@@ -1,12 +1,7 @@
 const Contest = require('../models/Contest');
-const Vote = require('../models/Vote'); // Fixed the import here
+const Vote = require('../');
 const mongoose = require('mongoose');
 
-/**
- * Get all contests.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- */
 const getContests = async (req, res) => {
     try {
         const contests = await Contest.find({});
@@ -17,11 +12,6 @@ const getContests = async (req, res) => {
     }
 };
 
-/**
- * Get a contest by its ID.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- */
 const getContestById = async (req, res) => {
     const { contestId } = req.params;
     try {
@@ -36,11 +26,6 @@ const getContestById = async (req, res) => {
     }
 };
 
-/**
- * Create a new contest.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- */
 const createContest = async (req, res) => {
     try {
         const { name, startDateTime, endDateTime, entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX } = req.body;
@@ -59,11 +44,6 @@ const createContest = async (req, res) => {
     }
 };
 
-/**
- * End a contest.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- */
 const endContest = async (req, res) => {
     const { contestId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(contestId)) {
@@ -81,11 +61,6 @@ const endContest = async (req, res) => {
     }
 };
 
-/**
- * Update the owner of a contest.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- */
 const updateContestOwner = async (req, res) => {
     const { contestId } = req.params;
     const { newOwner } = req.body;
@@ -107,11 +82,6 @@ const updateContestOwner = async (req, res) => {
     }
 };
 
-/**
- * Get contests by wallet address.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- */
 const getContestsByWallet = async (req, res) => {
     const { walletAddress } = req.params;
     try {
@@ -127,13 +97,8 @@ const getContestsByWallet = async (req, res) => {
     }
 };
 
-/**
- * Get contests by vote.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- */
 const getContestsByVote = async (req, res) => {
-    const { walletAddress } = req.body; // Changed to req.body to match the frontend request
+    const { walletAddress } = req.params;
     try {
         const votes = await Vote.find({ voter: walletAddress }).populate('contest submission');
         const contestIds = [...new Set(votes.map(vote => vote.contest._id))];
