@@ -75,7 +75,7 @@ console.log("Using Ethereum provider at:", url);
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     console.log("Request headers:", req.headers);
-    console.log("Request body:", req.body);
+    console.log("Request body:", JSON.stringify(req.body, null, 2));  // Log the request body
     next();
 });
 
@@ -172,5 +172,5 @@ const httpsServer = https.createServer(credentials, app);
 
 // Listen on HTTPS
 httpsServer.listen(port, () => {
-    console.log(`HTTPS Server running on https://194.124.43.95:${port}`);
+    console.log(`HTTPS Server running on https://app.dankmymeme.xyz:${port}`);
 });
