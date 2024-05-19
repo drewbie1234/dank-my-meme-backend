@@ -7,7 +7,7 @@ const fileUpload = require("express-fileupload");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const ethers = require("ethers");
-const helmet = require("helmet"); // Import Helmet
+const helmet = require("helmet");
 const winston = require("winston");
 
 // Load SSL certificate files
@@ -21,26 +21,23 @@ const credentials = {
     ca: ca
 };
 
-// Import models and other utilities
-const Contest = require("./database/models/Contest");
-const Submission = require("./database/models/Submission");
-const Vote = require("./database/models/Vote");
+// Import route modules
+const contestsRouter = require('./routes/contests');
+const submissionsRouter = require('./routes/submissions');
+const votesRouter = require('./routes/votes');
 const { getBalance, getEnsName } = require("./utils/ethereum");
 const { pinFileToIPFS } = require("./utils/pinata");
 
 // Initialize the Express application
 const app = express();
-const port = process.env.PORT || 443; // Standard HTTPS port is 443
+const port = process.env.PORT || 443;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
-app.use(helmet({
-    contentSecurityPolicy: false, // Disable CSP; customize as per your needs
-}));
-
-app.set('view engine', 'ejs'); // Set the template engine to EJS
+app.use(helmet({ contentSecurityPolicy: false }));
+app.set('view engine', 'ejs');
 
 // Set up Winston logger
 const logger = winston.createLogger({
@@ -62,7 +59,7 @@ async function connectToMongoDB() {
         console.log('Successfully connected to MongoDB');
     } catch (err) {
         console.error('MongoDB connection error:', err);
-        process.exit(1); // Exit the process with an error code
+        process.exit(1);
     }
 }
 
@@ -89,10 +86,7 @@ app.use((err, req, res, next) => {
 });
 
 // Serve static files from the '.well-known' directory
-app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), {
-    dotfiles: 'allow' // Important: allows serving of dotfiles such as '.well-known'
-}));
-
+app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), { dotfiles: 'allow' }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Custom Helmet settings for social media meta tags
@@ -113,173 +107,10 @@ app.use((req, res, next) => {
     next();
 });
 
-
-// Route to get contest by submission ID
-app.get('/api/submission/:submissionId', async (req, res) => {
-    try {
-        const { submissionId } = req.params;
-        console.log("Received request for submissionId:", submissionId);
-
-        // Validate ObjectId
-        if (!mongoose.Types.ObjectId.isValid(submissionId)) {
-            console.log("Invalid submission ID:", submissionId);
-            return res.status(400).json({ message: 'Invalid submission ID' });
-        }
-
-        // Find the submission by ID and populate the contest data
-        const submission = await Submission.findById(submissionId).populate('contest');
-        if (!submission) {
-            console.log("Submission not found for ID:", submissionId);
-            return res.status(404).json({ message: 'Submission not found' });
-        }
-        console.log("Found submission:", submission);
-
-        const contest = await Contest.findById(submission.contest._id)
-            .populate('submissions');
-
-        if (!contest) {
-            console.log("Contest not found for ID:", submission.contest._id);
-            return res.status(404).json({ message: 'Contest not found' });
-        }
-        console.log("Found contest:", contest);
-
-        const response = {
-            ...contest.toObject(),
-            submissions: [submissionId] // Only include the specific submission
-        };
-
-        res.json(response);
-    } catch (error) {
-        console.error('Failed to fetch submission and contest:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-
-// Route to end a contest
-app.patch("/api/contests/:contestId/end", async (req, res) => {
-    const { contestId } = req.params;
-
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(contestId)) {
-        return res.status(400).send('Invalid contest ID');
-    }
-
-    try {
-        // Find the contest by ID and update the contestEnded field to true
-        const updatedContest = await Contest.findByIdAndUpdate(
-            contestId,
-            { $set: { contestEnded: true } },
-            { new: true }  // Return the updated document
-        );
-
-        if (!updatedContest) {
-            return res.status(404).send("Contest not found");
-        }
-
-        console.log("Contest ended successfully:", updatedContest);
-        res.json({ message: "Contest ended successfully", contest: updatedContest });
-    } catch (error) {
-        console.error("Error ending contest:", error);
-        res.status(500).send("Error ending contest");
-    }
-});
-
-// Route to update contest owner
-app.patch('/api/contests/:contestId/owner', async (req, res) => {
-    const { contestId } = req.params;
-    const { newOwner } = req.body;
-
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(contestId)) {
-        return res.status(400).send('Invalid contest ID');
-    }
-
-    if (!newOwner) {
-        return res.status(400).send('New owner address is required');
-    }
-
-    try {
-        const updatedContest = await Contest.findByIdAndUpdate(
-            contestId,
-            { $set: { contestOwner: newOwner }},
-            { new: true } // options to return the updated document
-        );
-
-        if (!updatedContest) {
-            return res.status(404).send('Contest not found');
-        }
-
-        console.log('Updated contest owner:', updatedContest);
-        res.json({
-            message: 'Contest owner updated successfully',
-            contest: updatedContest
-        });
-    } catch (error) {
-        console.error('Failed to update contest owner:', error);
-        res.status(500).send('Error updating contest owner');
-    }
-});
-
-// Route to create a new contest
-app.post("/api/contests", async (req, res) => {
-    console.log("Received data for new contest:", req.body);
-    try {
-        const { name, startDateTime, endDateTime, entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX } = req.body;
-        if (!name || !startDateTime || !endDateTime || !entryFee || !votingFee || !winnerPercentage || !numberOfLuckyVoters || !contractAddress || !tokenAddress || !contestOwner) {
-            return res.status(400).send("Missing required fields");
-        }
-        const newContest = new Contest({
-            name, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime),
-            entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX
-        });
-        await newContest.save();
-        console.log("Contest created:", newContest);
-        res.json(newContest);
-    } catch (error) {
-        console.error("Error creating contest:", error);
-        res.status(500).send("Error creating contest");
-    }
-});
-
-// Route to get all contests with submissions filtered by wallet address
-app.get("/api/contests/submissionsByWallet/:walletAddress", async (req, res) => {
-    const { walletAddress } = req.params;
-    try {
-        // Find all contests and populate the submissions
-        const contests = await Contest.find({})
-            .populate('submissions');
-
-        // Filter the submissions based on wallet address
-        const filteredContests = contests.map(contest => {
-            const filteredSubmissions = contest.submissions
-                .filter(submission => submission.wallet === walletAddress)
-                .map(submission => submission._id); // Only keep the submission IDs
-
-            return {
-                ...contest.toObject(),
-                submissions: filteredSubmissions
-            };
-        }).filter(contest => contest.submissions.length > 0); // Ensure we only return contests with matching submissions
-
-        res.json(filteredContests);
-    } catch (error) {
-        console.error("Error fetching contests with filtered submissions:", error);
-        res.status(500).send("Error fetching contests with filtered submissions");
-    }
-});
-
-
-// Route to get all contests
-app.get("/api/contests", async (req, res) => {
-    try {
-        const contests = await Contest.find({});
-        res.json(contests);
-    } catch (error) {
-        console.error("Error fetching contests:", error);
-        res.status(500).send("Error fetching contests");
-    }
-});
+// Use the routes
+app.use('/api/contests', contestsRouter);
+app.use('/api/submissions', submissionsRouter);
+app.use('/api/votes', votesRouter);
 
 // Route to pin a file to IPFS
 app.post("/api/pinFile", async (req, res) => {
@@ -296,99 +127,6 @@ app.post("/api/pinFile", async (req, res) => {
     }
 });
 
-// Route to create a new submission
-app.post("/api/submissions", async (req, res) => {
-    const { contest, userAddress, ipfsHash } = req.body;
-    try {
-        if (!ipfsHash) {
-            return res.status(400).send("No IPFS hash provided");
-        }
-        const newSubmission = new Submission({ contest, wallet: userAddress, image: ipfsHash });
-        await newSubmission.save();
-        console.log("Submission created:", newSubmission);
-        const updatedContest = await Contest.findByIdAndUpdate(contest, { $push: { submissions: newSubmission._id } }, { new: true });
-        res.json(newSubmission);
-    } catch (error) {
-        console.error("Error submitting to contest:", error);
-        res.status(500).send("Error submitting to contest");
-    }
-});
-
-// Route to get submissions by IDs
-app.get("/api/submissions", async (req, res) => {
-    const { submissionIds } = req.query;
-    if (!submissionIds) {
-        return res.status(400).send("No submission IDs provided");
-    }
-    const ids = submissionIds.split(',').map(id => new mongoose.Types.ObjectId(id));
-    try {
-        const submissions = await Submission.find({ _id: { $in: ids } });
-        if (submissions.length === 0) {
-            return res.status(404).send("Submissions not found");
-        }
-        res.json(submissions);
-    } catch (error) {
-        console.error("Error fetching submissions:", error);
-        res.status(500).send("Error fetching submissions");
-    }
-});
-
-// Route to record a vote
-app.post("/api/vote", async (req, res) => {
-    const { contestId, voter, submissionIndex, txHash } = req.body;
-
-    if (!contestId || !voter || submissionIndex === undefined || !txHash) {
-        return res.status(400).json({ message: "Invalid input data. Missing required fields." });
-    }
-
-    try {
-        // Find the contest by ID
-        const contest = await Contest.findById(contestId).populate('submissions');
-        if (!contest) {
-            return res.status(404).json({ message: "Contest not found" });
-        }
-
-        // Check if the voter has already voted, prevent duplicate votes if necessary
-        if (contest.voters.includes(voter)) {
-            return res.status(400).json({ message: "Voter has already voted." });
-        }
-
-        const submission = contest.submissions[submissionIndex];
-        if (!submission) {
-            return res.status(404).json({ message: "Submission not found" });
-        }
-
-        // Record the vote
-        const vote = new Vote({
-            contest: contest._id,
-            submission: submission._id,
-            voter,
-            txHash
-        });
-        await vote.save();
-
-        // Increment votes on the submission and add voter to voters list
-        submission.votes += 1;
-        await submission.save();
-
-        // Push the voter to the voters array in the contest document
-        contest.voters.push(voter);
-
-        // Update the contest's winning submission and highest votes
-        if (!contest.winningSubmission || submission.votes > contest.highestVotes) {
-            contest.winningSubmission = submission._id;
-            contest.highestVotes = submission.votes;
-        }
-        await contest.save();
-
-        console.log("Vote recorded successfully:", vote);
-        res.status(201).json({ message: "Vote recorded successfully", vote });
-    } catch (error) {
-        console.error("Error recording vote:", error);
-        res.status(500).json({ message: "Error recording vote" });
-    }
-});
-
 // Route to get Ethereum balance
 app.get("/api/getBalance", async (req, res) => {
     const { account } = req.query;
@@ -401,12 +139,11 @@ app.get("/api/getBalance", async (req, res) => {
     }
 });
 
-// Route to get Lava balance (assumes the same function as getBalance)
+// Route to get Lava balance
 app.get("/api/getLavaBalance", async (req, res) => {
     const { account } = req.query;
     try {
         const balance = await getBalance(account);
-        console.log(balance);
         res.json({ balance });
     } catch (error) {
         console.error("Error fetching balance:", error);
@@ -420,12 +157,9 @@ app.get("/api/getEns", async (req, res) => {
     if (!account) {
         return res.status(400).send("Account parameter is required");
     }
-
     try {
         const ensName = await getEnsName(account);
-        // Check if ensName exists, otherwise format the account string
         const displayName = ensName || `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
-        console.log(displayName);
         res.json({ ensName: displayName });
     } catch (error) {
         console.error("Error fetching ENS name:", error);
@@ -440,5 +174,3 @@ const httpsServer = https.createServer(credentials, app);
 httpsServer.listen(port, () => {
     console.log(`HTTPS Server running on https://194.124.43.95:${port}`);
 });
-
-// Other routes can be defined similarly
