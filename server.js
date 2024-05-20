@@ -37,7 +37,10 @@ app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
 app.use(helmet({ contentSecurityPolicy: false }));
+
 app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 
 // Set up Winston logger
 const logger = winston.createLogger({
