@@ -12,7 +12,6 @@ const {
 
 router.get('/', getContests);
 router.get('/:contestId', getContestById); // This route handles fetching contest by ID
-router.get('/:contestId', getContestById); // This route handles fetching contest by ID
 
 router.post('/', createContest);
 router.patch('/:contestId/end', endContest);
