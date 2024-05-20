@@ -125,16 +125,25 @@ const getContestsByVote = async (req, res) => {
 const getContestById = async (req, res) => {
     const { contestId } = req.params;
     try {
-        const contest = await Contest.findById(contestId).populate('submissions');
+        // Find the contest by ID without populating submissions
+        const contest = await Contest.findById(contestId).lean();
         if (!contest) {
             return res.status(404).send('Contest not found');
         }
-        res.json(contest);
+
+        // Transform the contest object to include only submission IDs
+        const contestWithSubmissionIds = {
+            ...contest,
+            submissions: contest.submissions.map(submission => submission.toString())
+        };
+
+        res.json(contestWithSubmissionIds);
     } catch (error) {
         console.error("Error fetching contest:", error);
         res.status(500).send("Error fetching contest");
     }
 };
+
 
 
 
