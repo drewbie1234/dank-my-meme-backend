@@ -137,6 +137,8 @@ const getContestById = async (req, res) => {
             submissions: contest.submissions.map(submission => submission.toString())
         };
 
+        res.render('contest', { contest });
+
         res.json(contestWithSubmissionIds);
     } catch (error) {
         console.error("Error fetching contest:", error);
