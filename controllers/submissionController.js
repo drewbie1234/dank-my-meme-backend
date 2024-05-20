@@ -42,16 +42,32 @@ const getSubmissionById = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(submissionId)) {
             return res.status(400).json({ message: 'Invalid submission ID' });
         }
+
         const submission = await Submission.findById(submissionId).populate('contest');
         if (!submission) {
             return res.status(404).json({ message: 'Submission not found' });
         }
+
         const contest = await Contest.findById(submission.contest._id).populate('submissions');
         if (!contest) {
             return res.status(404).json({ message: 'Contest not found' });
         }
-        const response = { ...contest.toObject(), submissions: [submissionId] };
-        res.json(response);
+
+        const response = {
+            title: submission.title,
+            description: submission.description,
+            imageUrl: submission.imageUrl,
+            url: `https://app.dankmymeme.xyz/submissions/${submission.id}`,
+            contestTitle: contest.title,
+            contestDescription: contest.description,
+            submissions: contest.submissions
+        };
+
+        if (req.headers.accept && req.headers.accept.includes('text/html')) {
+            res.render('submission', response);
+        } else {
+            res.json(response);
+        }
     } catch (error) {
         console.error('Failed to fetch submission and contest:', error);
         res.status(500).json({ message: 'Server error' });
