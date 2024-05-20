@@ -8,16 +8,15 @@ const {
     updateContestOwner,
     getContestsByWallet,
     getContestsByVote
-} = require('../controllers/contestController')
+} = require('../controllers/contestController');
 
 router.get('/', getContests);
-router.get('/:contestId', getContestById);
+router.get('/:contestId', getContestById); // This route handles fetching contest by ID
 
 router.post('/', createContest);
 router.patch('/:contestId/end', endContest);
 router.patch('/:contestId/owner', updateContestOwner);
 router.post('/submissionsByWallet', getContestsByWallet);
-router.post('/votedContests', getContestsByVote); // Ensure this route is defined
-
+router.post('/votedContests', getContestsByVote); 
 
 module.exports = router;

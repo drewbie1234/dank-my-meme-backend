@@ -12,20 +12,6 @@ const getContests = async (req, res) => {
     }
 };
 
-const getContestById = async (req, res) => {
-    const { contestId } = req.params;
-    try {
-        const contest = await Contest.findById(contestId).populate('submissions');
-        if (!contest) {
-            return res.status(404).send('Contest not found');
-        }
-        res.json(contest);
-    } catch (error) {
-        console.error("Error fetching contest:", error);
-        res.status(500).send("Error fetching contest");
-    }
-};
-
 const createContest = async (req, res) => {
     try {
         const { name, startDateTime, endDateTime, entryFee, votingFee, winnerPercentage, numberOfLuckyVoters, contractAddress, tokenAddress, contestOwner, contestEnded, distributionTX } = req.body;
@@ -135,6 +121,21 @@ const getContestsByVote = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+const getContestById = async (req, res) => {
+    const { contestId } = req.params;
+    try {
+        const contest = await Contest.findById(contestId).populate('submissions');
+        if (!contest) {
+            return res.status(404).send('Contest not found');
+        }
+        res.json(contest);
+    } catch (error) {
+        console.error("Error fetching contest:", error);
+        res.status(500).send("Error fetching contest");
+    }
+};
+
 
 
 
