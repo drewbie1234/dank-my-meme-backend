@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { renderToString } = require('react-dom/server');
 const React = require('react');
-const App = require('../src/App').default; // Adjust the path to your App component
+const App = require('../server').default; // Adjust the path to your App component
 const {
     createSubmission,
     getSubmissionsByIds,
