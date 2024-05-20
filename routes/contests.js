@@ -10,14 +10,13 @@ const {
     getContestsByVote
 } = require('../controllers/contestController');
 
-// Route to fetch contest by ID and return JSON data
-router.get('/api/:contestId', getContestById);
+router.get('/', getContests);
 
-// Route to render EJS template for social sharing
+// Route to fetch contest by ID and render EJS template
 router.get('/:contestId', async (req, res) => {
     const { contestId } = req.params;
     try {
-        const contest = await Contest.findById(contestId).lean();
+        const contest = await getContestById(contestId);
         if (!contest) {
             return res.status(404).send('Contest not found');
         }
@@ -27,12 +26,10 @@ router.get('/:contestId', async (req, res) => {
         res.status(500).send("Error fetching contest");
     }
 });
-
-router.get('/', getContests);
 router.post('/', createContest);
 router.patch('/:contestId/end', endContest);
 router.patch('/:contestId/owner', updateContestOwner);
 router.post('/submissionsByWallet', getContestsByWallet);
-router.post('/votedContests', getContestsByVote);
+router.post('/votedContests', getContestsByVote); 
 
 module.exports = router;
