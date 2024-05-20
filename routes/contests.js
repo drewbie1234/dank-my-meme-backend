@@ -12,23 +12,7 @@ const {
 
 router.get('/', getContests);
 router.get('/:contestId', getContestById); // This route handles fetching contest by ID
-
-// Route to render EJS template for social sharing
-router.get('/:contestId/vieww', async (req, res) => {
-    const { contestId } = req.params;
-    try {
-        const contest = await Contest.findById(contestId).lean();
-        if (!contest) {
-            return res.status(404).send('Contest not found');
-        }
-        res.render('contest', { contest });
-    } catch (error) {
-        console.error("Error fetching contest:", error);
-        res.status(500).send("Error fetching contest");
-    }
-});
-
-module.exports = router;
+router.get('/:contestId', getContestById); // This route handles fetching contest by ID
 
 router.post('/', createContest);
 router.patch('/:contestId/end', endContest);
