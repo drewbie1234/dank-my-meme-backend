@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= contest.name %> - Dank My Meme</title>
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="<%= contest.name %>" />
+    <meta property="og:description" content="<%= contest.description %>" />
+    <meta property="og:image" content="<%= contest.image %>" />
+    <meta property="og:url" content="https://app.dankmymeme.xyz/contests/<%= contest._id %>" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:title" content="<%= contest.name %>" />
+    <meta name="twitter:description" content="<%= contest.description %>" />
+    <meta name="twitter:image" content="<%= contest.image %>" />
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    <link rel="stylesheet" href="/path/to/your/css">
+</head>
+<body>
+    <h1><%= contest.name %></h1>
+    <p><%= contest.description %></p>
+    <img src="<%= contest.image %>" alt="<%= contest.name %>" />
+</body>
+</html>

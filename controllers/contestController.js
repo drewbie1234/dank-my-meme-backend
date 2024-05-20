@@ -122,13 +122,13 @@ const getContestsByVote = async (req, res) => {
     }
 };
 
-const getContestById = async (req, res) => {
-    const { contestId } = req.params;
+
+const getContestById = async (contestId) => {
     try {
         // Find the contest by ID without populating submissions
         const contest = await Contest.findById(contestId).lean();
         if (!contest) {
-            return res.status(404).send('Contest not found');
+            return null;
         }
 
         // Transform the contest object to include only submission IDs
@@ -137,12 +137,23 @@ const getContestById = async (req, res) => {
             submissions: contest.submissions.map(submission => submission.toString())
         };
 
-        res.json(contestWithSubmissionIds);
+        return contestWithSubmissionIds;
     } catch (error) {
         console.error("Error fetching contest:", error);
-        res.status(500).send("Error fetching contest");
+        throw new Error("Error fetching contest");
     }
 };
+
+module.exports = {
+    getContestById,
+    getContests,
+    createContest,
+    endContest,
+    updateContestOwner,
+    getContestsByWallet,
+    getContestsByVote,
+};
+
 
 
 

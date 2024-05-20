@@ -38,6 +38,7 @@ app.use(express.json());
 app.use(fileUpload());
 app.use(helmet({ contentSecurityPolicy: false }));
 app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Set up Winston logger
 const logger = winston.createLogger({
@@ -88,24 +89,6 @@ app.use((err, req, res, next) => {
 // Serve static files from the '.well-known' directory
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), { dotfiles: 'allow' }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
-
-// Custom Helmet settings for social media meta tags
-app.use((req, res, next) => {
-    res.locals.helmet = helmet({
-        meta: {
-            'og:image': `https://app.dankmymeme.xyz/public/images/dank_my_meme.PNG`,
-            'twitter:image': `https://app.dankmymeme.xyz/public/images/dank_my_meme.PNG`,
-            'og:image:type': 'image/PNG',
-            'og:image:width': '1200',
-            'og:image:height': '630',
-            'og:url': `https://app.dankmymeme.xyz${req.originalUrl}`,
-            'og:title': 'Dank My Meme - Explore the best memes!',
-            'og:description': 'Join and explore the most entertaining memes on the internet. Participate in contests and win prizes!',
-            'og:type': 'website'
-        }
-    });
-    next();
-});
 
 // Use the routes
 app.use('/api/contests', contestsRouter);
