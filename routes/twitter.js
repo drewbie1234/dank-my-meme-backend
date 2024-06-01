@@ -1,31 +1,57 @@
 const express = require('express');
-const { TwitterApi } = require('twitter-api-v2');
+const got = require('got');
+const crypto = require('crypto');
+const OAuth = require('oauth-1.0a');
+const qs = require('querystring');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
 const router = express.Router();
 
-const twitterClient = new TwitterApi({
-  consumer_key: process.env.TWITTER_API_KEY,
-  consumer_secret: process.env.TWITTER_API_SECRET,
-  access_token_key: process.env.TWITTER_ACCESS_TOKEN,
-  access_token_secret: process.env.TWITTER_ACCESS_SECRET,
+const consumer_key = process.env.REACT_APP_TWITTER_CONSUMER_KEY;
+const consumer_secret = process.env.REACT_APP_TWITTER_CONSUMER_SECRET;
+
+const oauth = OAuth({
+  consumer: { key: consumer_key, secret: consumer_secret },
+  signature_method: 'HMAC-SHA1',
+  hash_function: (baseString, key) => crypto.createHmac('sha1', key).update(baseString).digest('base64'),
 });
+
+const requestTokenURL = 'https://api.twitter.com/oauth/request_token?oauth_callback=oob';
+const authorizeURL = new URL('https://api.twitter.com/oauth/authorize');
+const accessTokenURL = 'https://api.twitter.com/oauth/access_token';
 
 router.get('/tweet/:id', async (req, res) => {
   const tweetId = req.params.id;
-  console.log(`Fetching tweet with ID: ${tweetId}`); // Debugging log
+  const params = `tweet.fields=attachments&expansions=attachments.media_keys&media.fields=url`;
+  const endpointURL = `https://api.twitter.com/2/tweets?ids=${tweetId}&${params}`;
 
   try {
-    const tweet = await twitterClient.v2.singleTweet(tweetId, {
-      expansions: ['attachments.media_keys'],
-      'media.fields': ['url']
-    });
+    // Get request token
+    const authHeader = oauth.toHeader(oauth.authorize({ url: requestTokenURL, method: 'POST' }));
+    const requestTokenResponse = await got.post(requestTokenURL, { headers: { Authorization: authHeader["Authorization"] } });
+    const oAuthRequestToken = qs.parse(requestTokenResponse.body);
 
-    console.log('Tweet data:', tweet); // Debugging log
+    // Get authorization (this should be handled via a user interface in a real application)
+    authorizeURL.searchParams.append('oauth_token', oAuthRequestToken.oauth_token);
+    console.log('Please go here and authorize:', authorizeURL.href);
 
-    const media = tweet.includes?.media || [];
+    // Assuming you have a way to get the PIN from the user, for example, via a UI
+    const pin = 'user-provided-pin'; // This should be replaced with actual PIN from user input
+
+    // Get the access token
+    const accessTokenAuthHeader = oauth.toHeader(oauth.authorize({ url: accessTokenURL, method: 'POST' }));
+    const accessTokenResponse = await got.post(`${accessTokenURL}?oauth_verifier=${pin}&oauth_token=${oAuthRequestToken.oauth_token}`, { headers: { Authorization: accessTokenAuthHeader["Authorization"] } });
+    const oAuthAccessToken = qs.parse(accessTokenResponse.body);
+
+    // Make the request
+    const token = { key: oAuthAccessToken.oauth_token, secret: oAuthAccessToken.oauth_token_secret };
+    const finalAuthHeader = oauth.toHeader(oauth.authorize({ url: endpointURL, method: 'GET' }, token));
+    const tweetResponse = await got(endpointURL, { headers: { Authorization: finalAuthHeader["Authorization"], 'user-agent': "v2TweetLookupJS" } });
+
+    const tweetData = JSON.parse(tweetResponse.body);
+    const media = tweetData.includes?.media || [];
     const imageUrl = media.length > 0 ? media[0].url : null;
 
     if (!imageUrl) {
