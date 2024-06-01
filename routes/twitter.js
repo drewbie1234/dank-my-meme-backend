@@ -1,5 +1,4 @@
 const express = require('express');
-const got = require('got');
 const crypto = require('crypto');
 const OAuth = require('oauth-1.0a');
 const qs = require('querystring');
@@ -9,8 +8,8 @@ dotenv.config();
 
 const router = express.Router();
 
-const consumer_key = process.env.REACT_APP_TWITTER_CONSUMER_KEY;
-const consumer_secret = process.env.REACT_APP_TWITTER_CONSUMER_SECRET;
+const consumer_key = process.env.CONSUMER_KEY;
+const consumer_secret = process.env.CONSUMER_SECRET;
 
 const oauth = OAuth({
   consumer: { key: consumer_key, secret: consumer_secret },
@@ -28,24 +27,21 @@ router.get('/tweet/:id', async (req, res) => {
   const endpointURL = `https://api.twitter.com/2/tweets?ids=${tweetId}&${params}`;
 
   try {
-    // Get request token
+    const got = (await import('got')).default; // Use dynamic import
+
     const authHeader = oauth.toHeader(oauth.authorize({ url: requestTokenURL, method: 'POST' }));
     const requestTokenResponse = await got.post(requestTokenURL, { headers: { Authorization: authHeader["Authorization"] } });
     const oAuthRequestToken = qs.parse(requestTokenResponse.body);
 
-    // Get authorization (this should be handled via a user interface in a real application)
     authorizeURL.searchParams.append('oauth_token', oAuthRequestToken.oauth_token);
     console.log('Please go here and authorize:', authorizeURL.href);
 
-    // Assuming you have a way to get the PIN from the user, for example, via a UI
     const pin = 'user-provided-pin'; // This should be replaced with actual PIN from user input
 
-    // Get the access token
     const accessTokenAuthHeader = oauth.toHeader(oauth.authorize({ url: accessTokenURL, method: 'POST' }));
     const accessTokenResponse = await got.post(`${accessTokenURL}?oauth_verifier=${pin}&oauth_token=${oAuthRequestToken.oauth_token}`, { headers: { Authorization: accessTokenAuthHeader["Authorization"] } });
     const oAuthAccessToken = qs.parse(accessTokenResponse.body);
 
-    // Make the request
     const token = { key: oAuthAccessToken.oauth_token, secret: oAuthAccessToken.oauth_token_secret };
     const finalAuthHeader = oauth.toHeader(oauth.authorize({ url: endpointURL, method: 'GET' }, token));
     const tweetResponse = await got(endpointURL, { headers: { Authorization: finalAuthHeader["Authorization"], 'user-agent': "v2TweetLookupJS" } });
