@@ -127,9 +127,9 @@ router.get('/tweet/:id', async (req, res) => {
 
     res.json({ imageUrl });
   } catch (error) {
-    console.error('Error fetching tweet:', error);
+    // console.error('Error fetching tweet:', error);
     if (error.response) {
-      console.error('Error response data:', error.response.body);
+      // console.error('Error response data:', error.response.body);
     }
     res.status(500).json({ error: 'Error fetching tweet.' });
   }
