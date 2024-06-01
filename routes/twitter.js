@@ -29,6 +29,7 @@ router.get('/tweet/:id', async (req, res) => {
   try {
     const got = (await import('got')).default; // Use dynamic import
 
+    console.log('Requesting OAuth request token...');
     const authHeader = oauth.toHeader(oauth.authorize({ url: requestTokenURL, method: 'POST' }));
     const requestTokenResponse = await got.post(requestTokenURL, { headers: { Authorization: authHeader["Authorization"] } });
     const oAuthRequestToken = qs.parse(requestTokenResponse.body);
@@ -36,21 +37,29 @@ router.get('/tweet/:id', async (req, res) => {
     authorizeURL.searchParams.append('oauth_token', oAuthRequestToken.oauth_token);
     console.log('Please go here and authorize:', authorizeURL.href);
 
-    const pin = 'user-provided-pin'; // This should be replaced with actual PIN from user input
+    // Replace 'user-provided-pin' with the actual PIN provided by the user after authorization
+    const pin = 'user-provided-pin'; // Placeholder for user-provided PIN
 
+    console.log('Requesting OAuth access token...');
     const accessTokenAuthHeader = oauth.toHeader(oauth.authorize({ url: accessTokenURL, method: 'POST' }));
     const accessTokenResponse = await got.post(`${accessTokenURL}?oauth_verifier=${pin}&oauth_token=${oAuthRequestToken.oauth_token}`, { headers: { Authorization: accessTokenAuthHeader["Authorization"] } });
     const oAuthAccessToken = qs.parse(accessTokenResponse.body);
 
+    console.log('Access token obtained:', oAuthAccessToken);
+
+    console.log('Making request to Twitter API endpoint:', endpointURL);
     const token = { key: oAuthAccessToken.oauth_token, secret: oAuthAccessToken.oauth_token_secret };
     const finalAuthHeader = oauth.toHeader(oauth.authorize({ url: endpointURL, method: 'GET' }, token));
     const tweetResponse = await got(endpointURL, { headers: { Authorization: finalAuthHeader["Authorization"], 'user-agent': "v2TweetLookupJS" } });
 
     const tweetData = JSON.parse(tweetResponse.body);
+    console.log('Tweet data received:', tweetData);
+
     const media = tweetData.includes?.media || [];
     const imageUrl = media.length > 0 ? media[0].url : null;
 
     if (!imageUrl) {
+      console.error('No image found in the tweet');
       return res.status(404).json({ error: 'No image found in the tweet' });
     }
 
