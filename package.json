@@ -22,10 +22,13 @@
     "express": "^4.19.2",
     "express-fileupload": "^1.4.3",
     "express-session": "^1.18.0",
+    "got": "^14.3.0",
     "helmet": "^7.1.0",
     "mongodb": "^6.5.0",
     "mongoose": "^8.2.1",
+    "oauth-1.0a": "^2.2.6",
     "path": "^0.12.7",
+    "querystring": "^0.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "twitter-api-v2": "^1.17.0"
