@@ -1,41 +1,64 @@
 const express = require('express');
 const router = express.Router();
 const { TwitterApi } = require('twitter-api-v2');
+const axios = require('axios');
+const crypto = require('crypto');
+
+// Helper function to generate the code challenge and verifier
+function generateCodeChallengeAndVerifier() {
+  const verifier = crypto.randomBytes(32).toString('hex');
+  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
+  return { verifier, challenge };
+}
+
 const twitterClient = new TwitterApi({
-  appKey: process.env.TWITTER_APP_KEY,
-  appSecret: process.env.TWITTER_APP_SECRET,
-  accessToken: process.env.TWITTER_ACCESS_TOKEN,
-  accessSecret: process.env.TWITTER_ACCESS_SECRET,
+  clientId: process.env.TWITTER_CLIENT_ID,
+  clientSecret: process.env.TWITTER_CLIENT_SECRET,
 });
 
 const callbackURL = "https://dankmymeme.xyz/api/twitter/callback"; // Replace with your actual callback URL
 
-// Step 1: Request token
-router.get('/reverse', async (req, res) => {
-  try {
-    const { oauth_token, oauth_token_secret } = await twitterClient.generateAuthLink(callbackURL);
-    req.session.oauthToken = oauth_token;
-    req.session.oauthTokenSecret = oauth_token_secret;
-    res.json({ oauth_token });
-  } catch (error) {
-    console.error('Error during /reverse:', error);
-    res.status(500).json({ error: 'Error getting OAuth request token' });
-  }
+// Step 1: Construct an authorization URL
+router.get('/login', (req, res) => {
+  const { verifier, challenge } = generateCodeChallengeAndVerifier();
+  req.session.codeVerifier = verifier;
+
+  const scope = ['tweet.read', 'tweet.write', 'users.read', 'offline.access'];
+  const state = crypto.randomBytes(8).toString('hex'); // Use a random string as state parameter
+
+  const authUrl = twitterClient.generateAuthLink({
+    callbackURL,
+    scope,
+    state,
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+  });
+
+  req.session.state = state;
+
+  res.json({ authUrl });
 });
 
-// Step 2: Callback with verifier
+// Step 2: Handle the callback from Twitter
 router.get('/callback', async (req, res) => {
-  const { oauth_token, oauth_verifier } = req.query;
-  const { oauthToken, oauthTokenSecret } = req.session;
+  const { state, code } = req.query;
 
-  if (!oauth_token || !oauth_verifier || oauth_token !== oauthToken) {
-    return res.status(400).json({ error: 'Invalid OAuth token or verifier' });
+  if (state !== req.session.state) {
+    return res.status(400).json({ error: 'Invalid state' });
   }
 
+  const codeVerifier = req.session.codeVerifier;
+
   try {
-    const { client: userClient, accessToken, accessSecret } = await twitterClient.login(oauthToken, oauthTokenSecret, oauth_verifier);
+    const { client: loggedClient, accessToken, refreshToken, expiresIn } = await twitterClient.loginWithAuthCode({
+      code,
+      codeVerifier,
+      redirectUri: callbackURL,
+    });
+
     req.session.accessToken = accessToken;
-    req.session.accessSecret = accessSecret;
+    req.session.refreshToken = refreshToken;
+
     res.redirect('/'); // Redirect to your front-end page
   } catch (error) {
     console.error('Error during /callback:', error);
@@ -46,23 +69,23 @@ router.get('/callback', async (req, res) => {
 // Posting a tweet
 router.post('/tweet', async (req, res) => {
   const { text, imageUrl } = req.body;
-  const { accessToken, accessSecret } = req.session;
+  const { accessToken } = req.session;
 
-  if (!accessToken || !accessSecret) {
+  if (!accessToken) {
     return res.status(403).json({ error: 'User not authenticated with Twitter' });
   }
 
   try {
-    const userClient = new TwitterApi({ accessToken, accessSecret });
-    let tweetData = { status: text };
+    const userClient = new TwitterApi(accessToken);
+    let tweetData = { text };
 
     if (imageUrl) {
       const mediaId = await userClient.v1.uploadMedia(imageUrl);
       tweetData.media_ids = [mediaId];
     }
 
-    const tweet = await userClient.v1.tweet(tweetData);
-    res.json({ tweetUrl: `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}` });
+    const tweet = await userClient.v2.tweet(tweetData);
+    res.json({ tweetUrl: `https://twitter.com/i/web/status/${tweet.data.id}` });
   } catch (error) {
     console.error('Error posting tweet:', error);
     res.status(500).json({ error: 'Error posting tweet' });
