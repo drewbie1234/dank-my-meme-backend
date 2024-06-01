@@ -3,7 +3,6 @@ const crypto = require('crypto');
 const OAuth = require('oauth-1.0a');
 const qs = require('querystring');
 const dotenv = require('dotenv');
-const got = require('got');
 
 dotenv.config();
 
@@ -31,6 +30,7 @@ router.get('/tweet/:id', async (req, res) => {
   const endpointURL = `https://api.twitter.com/2/tweets?ids=${tweetId}&${params}`;
 
   async function requestToken() {
+    const got = (await import('got')).default;
     const authHeader = oauth.toHeader(oauth.authorize({
       url: requestTokenURL,
       method: 'POST'
@@ -50,6 +50,7 @@ router.get('/tweet/:id', async (req, res) => {
   }
 
   async function accessToken({ oauth_token, oauth_token_secret }, verifier) {
+    const got = (await import('got')).default;
     const authHeader = oauth.toHeader(oauth.authorize({
       url: accessTokenURL,
       method: 'POST'
@@ -71,6 +72,7 @@ router.get('/tweet/:id', async (req, res) => {
   }
 
   async function getRequest({ oauth_token, oauth_token_secret }) {
+    const got = (await import('got')).default;
     const token = {
       key: oauth_token,
       secret: oauth_token_secret
