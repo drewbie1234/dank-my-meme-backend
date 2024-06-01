@@ -26,6 +26,7 @@
     "helmet": "^7.1.0",
     "mongodb": "^6.5.0",
     "mongoose": "^8.2.1",
+    "needle": "^3.3.1",
     "oauth-1.0a": "^2.2.6",
     "path": "^0.12.7",
     "querystring": "^0.2.1",
