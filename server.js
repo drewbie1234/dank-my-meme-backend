@@ -26,7 +26,7 @@ const credentials = {
 const contestsRouter = require('./routes/contests');
 const submissionsRouter = require('./routes/submissions');
 const votesRouter = require('./routes/votes');
-const twitterRouter = require('./routes/twitter');
+const twitterRouter = require('./routes/');
 const { getBalance, getEnsName } = require("./utils/ethereum");
 const { pinFileToIPFS } = require("./utils/pinata");
 
@@ -121,7 +121,6 @@ app.use((req, res, next) => {
 app.use('/api/contests', contestsRouter);
 app.use('/api/submissions', submissionsRouter);
 app.use('/api/votes', votesRouter);
-
 app.use('/api/twitter', twitterRouter);
 
 
