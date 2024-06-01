@@ -1,0 +1,38 @@
+const express = require('express');
+const { TwitterApi } = require('twitter-api-v2');
+const router = express.Router();
+require('dotenv').config();
+
+const twitterClient = new TwitterApi({
+  appKey: process.env.TWITTER_APP_KEY,
+  appSecret: process.env.TWITTER_APP_SECRET,
+  accessToken: process.env.TWITTER_ACCESS_TOKEN,
+  accessSecret: process.env.TWITTER_ACCESS_SECRET,
+});
+
+router.post('/request_token', async (req, res) => {
+  try {
+    const { url, oauth_token } = await twitterClient.generateAuthLink(process.env.CALLBACK_URL);
+    req.session.oauthToken = oauth_token;
+    res.json({ url });
+  } catch (error) {
+    console.error('Error generating auth link:', error);
+    res.status(500).json({ error: 'Error generating auth link' });
+  }
+});
+
+router.post('/access_token', async (req, res) => {
+  const { oauth_token, oauth_verifier } = req.body;
+  try {
+    const { client: loggedClient, accessToken, accessSecret } = await twitterClient.login(oauth_verifier);
+    req.session.twitterClient = loggedClient;
+    req.session.accessToken = accessToken;
+    req.session.accessSecret = accessSecret;
+    res.status(200).json({ accessToken, accessSecret });
+  } catch (error) {
+    console.error('Error obtaining access token:', error);
+    res.status(500).json({ error: 'Error obtaining access token' });
+  }
+});
+
+module.exports = router;

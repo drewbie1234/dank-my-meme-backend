@@ -9,6 +9,8 @@ require("dotenv").config();
 const ethers = require("ethers");
 const helmet = require("helmet");
 const winston = require("winston");
+const session = require('express-session');
+const { TwitterApi } = require('twitter-api-v2');
 
 // Load SSL certificate files
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/app.dankmymeme.xyz/privkey.pem', 'utf8');
@@ -25,6 +27,7 @@ const credentials = {
 const contestsRouter = require('./routes/contests');
 const submissionsRouter = require('./routes/submissions');
 const votesRouter = require('./routes/votes');
+const twitterRouter = require('./routes/twitter');
 const { getBalance, getEnsName } = require("./utils/ethereum");
 const { pinFileToIPFS } = require("./utils/pinata");
 
@@ -37,10 +40,15 @@ app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
 app.use(helmet({ contentSecurityPolicy: false }));
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: true }
+}));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
 
 // Set up Winston logger
 const logger = winston.createLogger({
@@ -114,6 +122,7 @@ app.use((req, res, next) => {
 app.use('/api/contests', contestsRouter);
 app.use('/api/submissions', submissionsRouter);
 app.use('/api/votes', votesRouter);
+app.use('/api/twitter', twitterRouter);
 
 // Route to pin a file to IPFS
 app.post("/api/pinFile", async (req, res) => {
@@ -167,6 +176,25 @@ app.get("/api/getEns", async (req, res) => {
     } catch (error) {
         console.error("Error fetching ENS name:", error);
         res.status(500).send("Error fetching ENS name");
+    }
+});
+
+// Route to post a tweet
+app.post('/api/tweet', async (req, res) => {
+    const { text, imageUrl } = req.body;
+    if (!req.session.twitterClient) {
+        return res.status(401).send("Not authenticated with Twitter");
+    }
+
+    try {
+        // Upload media to Twitter
+        const mediaId = await req.session.twitterClient.v1.uploadMedia(imageUrl);
+        // Post tweet with media
+        const { data } = await req.session.twitterClient.v1.tweet(text, { media_ids: mediaId });
+        res.json({ tweetUrl: `https://twitter.com/${data.user.screen_name}/status/${data.id_str}` });
+    } catch (error) {
+        console.error("Error posting tweet:", error);
+        res.status(500).send("Error posting tweet");
     }
 });
 
