@@ -15,12 +15,15 @@ const twitterClient = new TwitterApi({
 
 router.get('/tweet/:id', async (req, res) => {
   const tweetId = req.params.id;
+  console.log(`Fetching tweet with ID: ${tweetId}`); // Debugging log
 
   try {
     const tweet = await twitterClient.v2.singleTweet(tweetId, {
       expansions: ['attachments.media_keys'],
       'media.fields': ['url']
     });
+
+    console.log('Tweet data:', tweet); // Debugging log
 
     const media = tweet.includes?.media || [];
     const imageUrl = media.length > 0 ? media[0].url : null;
