@@ -26,7 +26,7 @@ const credentials = {
 const contestsRouter = require('./routes/contests');
 const submissionsRouter = require('./routes/submissions');
 const votesRouter = require('./routes/votes');
-const twitterRouter = require('./routes/');
+const twitterRouter = require('./routes/twitter');
 const { getBalance, getEnsName } = require("./utils/ethereum");
 const { pinFileToIPFS } = require("./utils/pinata");
 
