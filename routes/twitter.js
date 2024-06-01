@@ -11,6 +11,9 @@ const router = express.Router();
 const consumer_key = process.env.CONSUMER_KEY;
 const consumer_secret = process.env.CONSUMER_SECRET;
 
+console.log('Consumer Key:', consumer_key);
+console.log('Consumer Secret:', consumer_secret);
+
 const oauth = OAuth({
   consumer: {
     key: consumer_key,
@@ -36,11 +39,15 @@ router.get('/tweet/:id', async (req, res) => {
       method: 'POST'
     }));
 
+    console.log('Request Token Header:', authHeader);
+
     const req = await got.post(requestTokenURL, {
       headers: {
         Authorization: authHeader["Authorization"]
       }
     });
+
+    console.log('Request Token Response:', req.body);
 
     if (req.body) {
       return qs.parse(req.body);
@@ -58,11 +65,16 @@ router.get('/tweet/:id', async (req, res) => {
 
     const path = `https://api.twitter.com/oauth/access_token?oauth_verifier=${verifier}&oauth_token=${oauth_token}`;
 
+    console.log('Access Token Header:', authHeader);
+    console.log('Access Token Path:', path);
+
     const req = await got.post(path, {
       headers: {
         Authorization: authHeader["Authorization"]
       }
     });
+
+    console.log('Access Token Response:', req.body);
 
     if (req.body) {
       return qs.parse(req.body);
@@ -83,12 +95,17 @@ router.get('/tweet/:id', async (req, res) => {
       method: 'GET'
     }, token));
 
+    console.log('Get Request Header:', authHeader);
+    console.log('Endpoint URL:', endpointURL);
+
     const req = await got(endpointURL, {
       headers: {
         Authorization: authHeader["Authorization"],
         'user-agent': "v2TweetLookupJS"
       }
     });
+
+    console.log('Get Request Response:', req.body);
 
     if (req.body) {
       return JSON.parse(req.body);
@@ -100,22 +117,21 @@ router.get('/tweet/:id', async (req, res) => {
   try {
     console.log('Requesting OAuth request token...');
     const oAuthRequestToken = await requestToken();
-    console.log(oAuthRequestToken);
+    console.log('OAuth Request Token:', oAuthRequestToken);
 
     authorizeURL.searchParams.append('oauth_token', oAuthRequestToken.oauth_token);
-    // console.log('Please go here and authorize:', authorizeURL.href);
+    console.log('Please go here and authorize:', authorizeURL.href);
 
     // Simulating user providing the PIN after authorization (replace with actual implementation)
     const pin = 'user-provided-pin'; // Replace with actual PIN received after user authorization
 
     console.log('Requesting OAuth access token...');
     const oAuthAccessToken = await accessToken(oAuthRequestToken, pin.trim());
+    console.log('OAuth Access Token:', oAuthAccessToken);
 
-    // console.log('Access token obtained:', oAuthAccessToken);
-
-    // console.log('Making request to Twitter API endpoint:', endpointURL);
+    console.log('Making request to Twitter API endpoint:', endpointURL);
     const response = await getRequest(oAuthAccessToken);
-    // console.log('Tweet data received:', response);
+    console.log('Tweet data received:', response);
 
     const media = response.includes?.media || [];
     const imageUrl = media.length > 0 ? media[0].url : null;
@@ -127,7 +143,7 @@ router.get('/tweet/:id', async (req, res) => {
 
     res.json({ imageUrl });
   } catch (error) {
-    // console.error('Error fetching tweet:', error);
+    console.error('Error fetching tweet:', error);
     if (error.response) {
       console.error('Error response data:', error.response.body);
     }
