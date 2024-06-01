@@ -39,7 +39,7 @@ router.get('/tweet/:id', async (req, res) => {
       method: 'POST'
     }));
 
-    console.log('Request Token Header:', authHeader);
+    // console.log('Request Token Header:', authHeader);
 
     const req = await got.post(requestTokenURL, {
       headers: {
@@ -47,7 +47,7 @@ router.get('/tweet/:id', async (req, res) => {
       }
     });
 
-    console.log('Request Token Response:', req.body);
+    // console.log('Request Token Response:', req.body);
 
     if (req.body) {
       return qs.parse(req.body);
@@ -65,8 +65,8 @@ router.get('/tweet/:id', async (req, res) => {
 
     const path = `https://api.twitter.com/oauth/access_token?oauth_verifier=${verifier}&oauth_token=${oauth_token}`;
 
-    console.log('Access Token Header:', authHeader);
-    console.log('Access Token Path:', path);
+    // console.log('Access Token Header:', authHeader);
+    // console.log('Access Token Path:', path);
 
     const req = await got.post(path, {
       headers: {
@@ -74,7 +74,7 @@ router.get('/tweet/:id', async (req, res) => {
       }
     });
 
-    console.log('Access Token Response:', req.body);
+    // console.log('Access Token Response:', req.body);
 
     if (req.body) {
       return qs.parse(req.body);
@@ -143,7 +143,7 @@ router.get('/tweet/:id', async (req, res) => {
 
     res.json({ imageUrl });
   } catch (error) {
-    console.error('Error fetching tweet:', error);
+    // console.error('Error fetching tweet:', error);
     if (error.response) {
       console.error('Error response data:', error.response.body);
     }
