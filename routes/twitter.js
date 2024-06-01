@@ -45,7 +45,7 @@ router.get('/tweet/:id', async (req, res) => {
     const accessTokenResponse = await got.post(`${accessTokenURL}?oauth_verifier=${pin}&oauth_token=${oAuthRequestToken.oauth_token}`, { headers: { Authorization: accessTokenAuthHeader["Authorization"] } });
     const oAuthAccessToken = qs.parse(accessTokenResponse.body);
 
-    console.log('Access token obtained:', oAuthAccessToken);
+    // console.log('Access token obtained:', oAuthAccessToken);
 
     console.log('Making request to Twitter API endpoint:', endpointURL);
     const token = { key: oAuthAccessToken.oauth_token, secret: oAuthAccessToken.oauth_token_secret };
@@ -53,7 +53,7 @@ router.get('/tweet/:id', async (req, res) => {
     const tweetResponse = await got(endpointURL, { headers: { Authorization: finalAuthHeader["Authorization"], 'user-agent': "v2TweetLookupJS" } });
 
     const tweetData = JSON.parse(tweetResponse.body);
-    console.log('Tweet data received:', tweetData);
+    // console.log('Tweet data received:', tweetData);
 
     const media = tweetData.includes?.media || [];
     const imageUrl = media.length > 0 ? media[0].url : null;
@@ -65,7 +65,7 @@ router.get('/tweet/:id', async (req, res) => {
 
     res.json({ imageUrl });
   } catch (error) {
-    console.error('Error fetching tweet:', error);
+    // console.error('Error fetching tweet:', error);
     res.status(500).json({ error: 'Error fetching tweet.' });
   }
 });
