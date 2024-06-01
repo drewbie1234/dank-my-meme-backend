@@ -100,9 +100,10 @@ router.get('/tweet/:id', async (req, res) => {
   try {
     console.log('Requesting OAuth request token...');
     const oAuthRequestToken = await requestToken();
+    console.log(oAuthRequestToken);
 
     authorizeURL.searchParams.append('oauth_token', oAuthRequestToken.oauth_token);
-    console.log('Please go here and authorize:', authorizeURL.href);
+    // console.log('Please go here and authorize:', authorizeURL.href);
 
     // Simulating user providing the PIN after authorization (replace with actual implementation)
     const pin = 'user-provided-pin'; // Replace with actual PIN received after user authorization
@@ -110,11 +111,11 @@ router.get('/tweet/:id', async (req, res) => {
     console.log('Requesting OAuth access token...');
     const oAuthAccessToken = await accessToken(oAuthRequestToken, pin.trim());
 
-    console.log('Access token obtained:', oAuthAccessToken);
+    // console.log('Access token obtained:', oAuthAccessToken);
 
-    console.log('Making request to Twitter API endpoint:', endpointURL);
+    // console.log('Making request to Twitter API endpoint:', endpointURL);
     const response = await getRequest(oAuthAccessToken);
-    console.log('Tweet data received:', response);
+    // console.log('Tweet data received:', response);
 
     const media = response.includes?.media || [];
     const imageUrl = media.length > 0 ? media[0].url : null;
