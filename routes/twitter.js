@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const OAuth = require('oauth-1.0a');
 const qs = require('querystring');
+const axios = require('axios');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -10,6 +11,7 @@ const router = express.Router();
 
 const consumer_key = process.env.CONSUMER_KEY;
 const consumer_secret = process.env.CONSUMER_SECRET;
+const callback_url = process.env.CALLBACK_URL; // Ensure you have CALLBACK_URL in your .env
 
 console.log('Consumer Key:', consumer_key);
 console.log('Consumer Secret:', consumer_secret);
@@ -23,131 +25,73 @@ const oauth = OAuth({
   hash_function: (baseString, key) => crypto.createHmac('sha1', key).update(baseString).digest('base64')
 });
 
-const requestTokenURL = 'https://api.twitter.com/oauth/request_token?oauth_callback=oob';
-const authorizeURL = new URL('https://api.twitter.com/oauth/authorize');
+const requestTokenURL = 'https://api.twitter.com/oauth/request_token';
+const authorizeURL = 'https://api.twitter.com/oauth/authorize';
 const accessTokenURL = 'https://api.twitter.com/oauth/access_token';
 
-router.get('/tweet/:id', async (req, res) => {
-  const tweetId = req.params.id;
-  const params = `tweet.fields=attachments&expansions=attachments.media_keys&media.fields=url`;
-  const endpointURL = `https://api.twitter.com/2/tweets?ids=${tweetId}&${params}`;
-
-  async function requestToken() {
-    const got = (await import('got')).default;
-    const authHeader = oauth.toHeader(oauth.authorize({
-      url: requestTokenURL,
-      method: 'POST'
-    }));
-
-    // console.log('Request Token Header:', authHeader);
-
-    const req = await got.post(requestTokenURL, {
-      headers: {
-        Authorization: authHeader["Authorization"]
-      }
-    });
-
-    // console.log('Request Token Response:', req.body);
-
-    if (req.body) {
-      return qs.parse(req.body);
-    } else {
-      throw new Error('Cannot get an OAuth request token');
+router.get('/request_token', async (req, res) => {
+  const requestData = {
+    url: requestTokenURL,
+    method: 'POST',
+    data: {
+      oauth_callback: callback_url
     }
-  }
+  };
 
-  async function accessToken({ oauth_token, oauth_token_secret }, verifier) {
-    const got = (await import('got')).default;
-    const authHeader = oauth.toHeader(oauth.authorize({
-      url: accessTokenURL,
-      method: 'POST'
-    }));
-
-    const path = `https://api.twitter.com/oauth/access_token?oauth_verifier=${verifier}&oauth_token=${oauth_token}`;
-
-    // console.log('Access Token Header:', authHeader);
-    // console.log('Access Token Path:', path);
-
-    const req = await got.post(path, {
-      headers: {
-        Authorization: authHeader["Authorization"]
-      }
-    });
-
-    // console.log('Access Token Response:', req.body);
-
-    if (req.body) {
-      return qs.parse(req.body);
-    } else {
-      throw new Error('Cannot get an OAuth request token');
-    }
-  }
-
-  async function getRequest({ oauth_token, oauth_token_secret }) {
-    const got = (await import('got')).default;
-    const token = {
-      key: oauth_token,
-      secret: oauth_token_secret
-    };
-
-    const authHeader = oauth.toHeader(oauth.authorize({
-      url: endpointURL,
-      method: 'GET'
-    }, token));
-
-    console.log('Get Request Header:', authHeader);
-    console.log('Endpoint URL:', endpointURL);
-
-    const req = await got(endpointURL, {
-      headers: {
-        Authorization: authHeader["Authorization"],
-        'user-agent': "v2TweetLookupJS"
-      }
-    });
-
-    console.log('Get Request Response:', req.body);
-
-    if (req.body) {
-      return JSON.parse(req.body);
-    } else {
-      throw new Error('Unsuccessful request');
-    }
-  }
+  const authHeader = oauth.toHeader(oauth.authorize(requestData));
 
   try {
-    console.log('Requesting OAuth request token...');
-    const oAuthRequestToken = await requestToken();
-    console.log('OAuth Request Token:', oAuthRequestToken);
+    const response = await axios.post(requestTokenURL, qs.stringify(requestData.data), {
+      headers: {
+        Authorization: authHeader.Authorization,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
 
-    authorizeURL.searchParams.append('oauth_token', oAuthRequestToken.oauth_token);
-    console.log('Please go here and authorize:', authorizeURL.href);
+    const responseData = qs.parse(response.data);
+    console.log('Request Token Response:', responseData);
 
-    // Simulating user providing the PIN after authorization (replace with actual implementation)
-    const pin = 'user-provided-pin'; // Replace with actual PIN received after user authorization
-
-    console.log('Requesting OAuth access token...');
-    const oAuthAccessToken = await accessToken(oAuthRequestToken, pin.trim());
-    console.log('OAuth Access Token:', oAuthAccessToken);
-
-    console.log('Making request to Twitter API endpoint:', endpointURL);
-    const response = await getRequest(oAuthAccessToken);
-    console.log('Tweet data received:', response);
-
-    const media = response.includes?.media || [];
-    const imageUrl = media.length > 0 ? media[0].url : null;
-
-    if (!imageUrl) {
-      console.error('No image found in the tweet');
-      return res.status(404).json({ error: 'No image found in the tweet' });
-    }
-
-    res.json({ imageUrl });
+    res.redirect(`${authorizeURL}?oauth_token=${responseData.oauth_token}`);
   } catch (error) {
-    // console.error('Error fetching tweet:', error);
-    if (error.response) {
-      console.error('Error response data:', error.response.body);
+    console.error('Error fetching request token:', error.response ? error.response.data : error.message);
+    res.status(500).json({ error: 'Cannot get an OAuth request token' });
+  }
+});
+
+router.get('/callback', async (req, res) => {
+  const { oauth_token, oauth_verifier } = req.query;
+
+  const oAuthRequestToken = {
+    key: oauth_token,
+    secret: '' // You should store the oauth_token_secret in a secure place (e.g., session or database)
+  };
+
+  const requestData = {
+    url: accessTokenURL,
+    method: 'POST',
+    data: {
+      oauth_verifier
     }
-    res.status(500).json({ error: 'Error fetching tweet.' });
+  };
+
+  const authHeader = oauth.toHeader(oauth.authorize(requestData, oAuthRequestToken));
+
+  try {
+    const response = await axios.post(accessTokenURL, qs.stringify(requestData.data), {
+      headers: {
+        Authorization: authHeader.Authorization,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    const responseData = qs.parse(response.data);
+    console.log('Access Token Response:', responseData);
+
+    // Here you would save the access token and secret in a secure place, e.g., a session or database
+    res.json({ access_token: responseData.oauth_token, access_token_secret: responseData.oauth_token_secret });
+  } catch (error) {
+    console.error('Error fetching access token:', error.response ? error.response.data : error.message);
+    res.status(500).json({ error: 'Cannot get an OAuth access token' });
   }
 });
 
