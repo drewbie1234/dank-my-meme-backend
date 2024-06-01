@@ -45,7 +45,7 @@ router.get('/tweet/:id', async (req, res) => {
     const accessTokenResponse = await got.post(`${accessTokenURL}?oauth_verifier=${pin}&oauth_token=${oAuthRequestToken.oauth_token}`, { headers: { Authorization: accessTokenAuthHeader["Authorization"] } });
     const oAuthAccessToken = qs.parse(accessTokenResponse.body);
 
-    // console.log('Access token obtained:', oAuthAccessToken);
+    console.log('Access token obtained:', oAuthAccessToken);
 
     console.log('Making request to Twitter API endpoint:', endpointURL);
     const token = { key: oAuthAccessToken.oauth_token, secret: oAuthAccessToken.oauth_token_secret };
