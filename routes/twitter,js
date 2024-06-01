@@ -1,8 +1,6 @@
 const express = require('express');
-const { TwitterApi } = require('twitter-api-v2');
 const router = express.Router();
-require('dotenv').config();
-
+const { TwitterApi } = require('twitter-api-v2');
 const twitterClient = new TwitterApi({
   appKey: process.env.TWITTER_APP_KEY,
   appSecret: process.env.TWITTER_APP_SECRET,
@@ -10,28 +8,64 @@ const twitterClient = new TwitterApi({
   accessSecret: process.env.TWITTER_ACCESS_SECRET,
 });
 
-router.post('/request_token', async (req, res) => {
+const callbackURL = "https://dankmymeme.xyz/api/twitter/callback"; // Replace with your actual callback URL
+
+// Step 1: Request token
+router.get('/reverse', async (req, res) => {
   try {
-    const { url, oauth_token } = await twitterClient.generateAuthLink(process.env.CALLBACK_URL);
+    const { oauth_token, oauth_token_secret } = await twitterClient.generateAuthLink(callbackURL);
     req.session.oauthToken = oauth_token;
-    res.json({ url });
+    req.session.oauthTokenSecret = oauth_token_secret;
+    res.json({ oauth_token });
   } catch (error) {
-    console.error('Error generating auth link:', error);
-    res.status(500).json({ error: 'Error generating auth link' });
+    console.error('Error during /reverse:', error);
+    res.status(500).json({ error: 'Error getting OAuth request token' });
   }
 });
 
-router.post('/access_token', async (req, res) => {
-  const { oauth_token, oauth_verifier } = req.body;
+// Step 2: Callback with verifier
+router.get('/callback', async (req, res) => {
+  const { oauth_token, oauth_verifier } = req.query;
+  const { oauthToken, oauthTokenSecret } = req.session;
+
+  if (!oauth_token || !oauth_verifier || oauth_token !== oauthToken) {
+    return res.status(400).json({ error: 'Invalid OAuth token or verifier' });
+  }
+
   try {
-    const { client: loggedClient, accessToken, accessSecret } = await twitterClient.login(oauth_verifier);
-    req.session.twitterClient = loggedClient;
+    const { client: userClient, accessToken, accessSecret } = await twitterClient.login(oauthToken, oauthTokenSecret, oauth_verifier);
     req.session.accessToken = accessToken;
     req.session.accessSecret = accessSecret;
-    res.status(200).json({ accessToken, accessSecret });
+    res.redirect('/'); // Redirect to your front-end page
   } catch (error) {
-    console.error('Error obtaining access token:', error);
-    res.status(500).json({ error: 'Error obtaining access token' });
+    console.error('Error during /callback:', error);
+    res.status(500).json({ error: 'Error getting OAuth access token' });
+  }
+});
+
+// Posting a tweet
+router.post('/tweet', async (req, res) => {
+  const { text, imageUrl } = req.body;
+  const { accessToken, accessSecret } = req.session;
+
+  if (!accessToken || !accessSecret) {
+    return res.status(403).json({ error: 'User not authenticated with Twitter' });
+  }
+
+  try {
+    const userClient = new TwitterApi({ accessToken, accessSecret });
+    let tweetData = { status: text };
+
+    if (imageUrl) {
+      const mediaId = await userClient.v1.uploadMedia(imageUrl);
+      tweetData.media_ids = [mediaId];
+    }
+
+    const tweet = await userClient.v1.tweet(tweetData);
+    res.json({ tweetUrl: `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}` });
+  } catch (error) {
+    console.error('Error posting tweet:', error);
+    res.status(500).json({ error: 'Error posting tweet' });
   }
 });
 
