@@ -51,7 +51,7 @@ router.get('/request_token', async (req, res) => {
     const responseData = qs.parse(response.data);
     console.log('Request Token Response:', responseData);
 
-    res.redirect(`${authorizeURL}?oauth_token=${responseData.oauth_token}`);
+    res.json({ authUrl: `${authorizeURL}?oauth_token=${responseData.oauth_token}` });
   } catch (error) {
     console.error('Error fetching request token:', error.response ? error.response.data : error.message);
     res.status(500).json({ error: 'Cannot get an OAuth request token' });
