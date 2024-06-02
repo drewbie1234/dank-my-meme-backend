@@ -18,8 +18,8 @@ console.log('Consumer Secret:', consumer_secret);
 
 const oauth = OAuth({
   consumer: {
-    key: consumer_key,
-    secret: consumer_secret
+    consumer_key: consumer_key,
+    consumer_secret: consumer_secret
   },
   signature_method: 'HMAC-SHA1',
   hash_function: (baseString, key) => crypto.createHmac('sha1', key).update(baseString).digest('base64')
