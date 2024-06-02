@@ -13,7 +13,7 @@ const ethers = require("ethers");
 
 // Log setup
 const util = require('util');
-const logFile = fs.createWriteStream('/path/to/logfile.log', { flags: 'a' }); // Change path as needed
+const logFile = fs.createWriteStream('/logfile.log', { flags: 'a' }); // Change path as needed
 const logStdout = process.stdout;
 
 console.log = function(...args) {
