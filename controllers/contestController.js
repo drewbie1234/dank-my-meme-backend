@@ -91,8 +91,6 @@ const getContestsByWallet = async (req, res) => {
     }
 };
 
-
-
 const getContestsByVote = async (req, res) => {
     const { walletAddress } = req.body; // Correctly getting walletAddress from req.body
     try {
@@ -143,10 +141,6 @@ const getContestById = async (req, res) => {
         res.status(500).send("Error fetching contest");
     }
 };
-
-
-
-
 
 module.exports = {
     getContests,

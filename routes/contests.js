@@ -1,5 +1,7 @@
 const express = require('express');
+
 const router = express.Router();
+
 const {
     getContests,
     getContestById,
@@ -12,7 +14,6 @@ const {
 
 router.get('/', getContests);
 router.get('/:contestId', getContestById); // This route handles fetching contest by ID
-
 router.post('/', createContest);
 router.patch('/:contestId/end', endContest);
 router.patch('/:contestId/owner', updateContestOwner);
